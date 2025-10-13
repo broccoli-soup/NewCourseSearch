@@ -8,31 +8,32 @@
         body{
             height: 100vh;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            text-align: center;
-            font-family: Arial;
-            padding: 30px;
-            border-radius: 12px;
-            background: #ffffff;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            width: 400px;
+        }
+        .pop {
+            animation: popIn 0.4s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
         }
         ul{
             list-style: none;
-            padding: 0;
-            max-width: 300px;
+            padding: 5px;
+            overflow-y: auto;
         }
         li{
             background-color: #f0f0f0;
             padding: 10px;
-            margin: 6px;
+            margin: 6px 0;
+            width: 100%;
+            box-sizing: border-box;
             border-radius: 6px;
             box-shadow: 1px, 1px, 4px rgba(0, 0, 0, 0.1);
         }
         .button {
             margin-left: 10px;
+            margin-top: 10px;
             padding: 15px;
             background-color: #c00000;
             color: white;
@@ -41,23 +42,87 @@
             font-size: 14px;
             cursor: pointer;
         }
+        #gameBox {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            font-family: Arial;
+            padding: 5vh;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            height: 90vh;
+            min-height: auto;
+            width: 30vw;
+        }
+        #dropdownSelect input{
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #dropdownSelect select{
+            margin: 5px;
+            padding: 10px;
+        }
+        #infoBox{
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            font-family: Arial;
+            padding: 5vh 5vw;
+            margin-left: 1vw;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            height: 90vh;
+            min-height: auto;
+            flex: 1;
+        }
     </style>
 </head>
 <body>
-    <div id="mainBox">
+    <div id="gameBox">
         <h2>Prerequisite Search Tool</h2>
-        <p>BUA Computer Science Club</p>
-        <button class = "button" onclick = "addPrerequisite()">Add Prerequisites</button>
+        <p>Developed by Shaun Ng for BUA Computer Science Club</p>
+        <div id="dropdownSelect">
+            <select id="collegeSelect">
+                <option value="" disabled selected>Select Subject</option>
+                <option value="CAS MA">CAS MA - Mathematics and Statistics</option>
+                <option value="CAS PY">CAS PY – Physics</option>
+                <option value="CAS EC">CAS EC – Economics</option>
+            </select>
+            <input id="courseCode" type = "number" min = "101" max = "999" placeholder = "Course code">
+        </div>
+        <button class = "button" onclick = "addPrerequisite()">Add Prerequisite</button>
         <!-- <button onclick="checkGuess()">Submit</button> !-->
         <div id="messageBox"></div>
-        <ul>
-            <li>CAS MA 242: Linear Algebra</li>
-            <li>CAS MA 226: Differential Equations</li>
+        <ul id="courseList">
+        </ul>
+    </div>
+    <div id = "infoBox">
+        <h2>Available Courses</h2>
+        <ul id = "avCourses">
+            <li>Cheese</li>
         </ul>
     </div>
     
+    <!-- for (let i = 0; i < csvArray.length; i++){
+        let unpackedArray = csvArray[i][1].split("OR");
+        unpackedArray = unpackedArray.map(part => part.trim());
+        console.log(unpackedArray);
+    } FOR LATER USE --> 
 
     <script>
+
         const csvString = `Class Name,Course Code,Prerequisite 1,Prerequisite 2,Prerequisite 3,Notes
 Mathematical Reasoning in the Elementary Grades: Number Systems,CAS MA 107,,,,
 "Mathematical Reasoning in the Elementary Grades: Algebra, Geometry, and Statistics",CAS MA 108,CAS MA 107 OR SED ME503,,,
@@ -129,8 +194,82 @@ Introduction to Causal Inference,CAS MA 592,CAS MA 575,,,`;
         console.log(csvArray);
 
         function addPrerequisite(){
-            return;
+            let college = document.getElementById("collegeSelect").value;
+            let courseCode = document.getElementById("courseCode").value;
+            let joinedCode = college + " " + courseCode;
+            index = false;
+            for (let i = 0; i < csvArray.length; i++){
+                let unpackedArray = csvArray[i][1]
+                if (joinedCode == unpackedArray){
+                    index = i;
+                }
+            }
+            if (index == false){
+                alert('Course not found!')
+            }
+            let toAdd = joinedCode + ": " + csvArray[index][0];
+            const courseList = document.getElementById("courseList");
+            const li = document.createElement('li');
+            li.classList.add('pop'); // essentially, makes li into a .pop class
+            li.textContent = toAdd;
+
+            li.style.cursor = 'pointer'; // even when hovering, its a cursor
+            // event listener, removes when clicked
+            
+            li.addEventListener('click', () => {
+                li.remove();
+                generateAvCourses();
+            });
+            courseList.appendChild(li);
+            generateAvCourses();
         }
+        
+        function generateAvCourses(){
+            const avCourseList = document.getElementById("avCourses");
+            avCourseList.innerHTML = '';
+
+            for (let i = 1; i < csvArray.length; i++) {
+                let hasPrereqs = true; 
+                const prereqCols = [2, 3, 4]; // columns in csvArray
+
+                const coursesTaken = Array.from(document.querySelectorAll("#courseList li"))
+                    .map(li => li.textContent.split(":")[0].trim()); // ["CAS MA 123", ...]
+
+                for (let col of prereqCols) {
+                    let prereqStr = csvArray[i][col]; // what are the prerequisites for this course? 
+                    if (!prereqStr || prereqStr.trim() === '') continue; // check if empty
+
+                    // Split by OR and trim each option
+                    let options = prereqStr.split("OR").map(p => p.trim());
+
+                    // Check if at least one option is satisfied
+                    let satisfied = options.some(opt => coursesTaken.includes(opt));
+
+                    if (!satisfied) {
+                        hasPrereqs = false;
+                        break; // If one prereq column fails, skip this course
+                    }
+                }
+
+                if (hasPrereqs){
+                    let toAdd = csvArray[i][1] + ": " + csvArray[i][0];
+                    const new_li = document.createElement('li');
+                    new_li.classList.add('pop'); // essentially, makes li into a .pop class
+                    new_li.textContent = toAdd;
+                    avCourseList.appendChild(new_li);
+                }
+            }
+        }
+        
+
+        const listItems = document.querySelectorAll('#courseList li');
+
+        listItems.forEach(item => {
+            item.style.cursor = 'pointer'; // even when hovering, its a cursor
+            item.addEventListener('click', () => {
+            item.remove();
+            });
+        });
     </script>
 </body>
 </html>
