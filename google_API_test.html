@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Load Google Sheets</title>
+  <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+  <div id="sheet-table"></div>
+
+  <script type="text/javascript">
+    google.charts.load('current', {'packages':['table']});
+    google.charts.setOnLoadCallback(drawTable);
+
+    function drawTable() {
+      const queryString = encodeURIComponent('SELECT *');
+      const sheetId = '1LyF50q4Luh-lImE66mXaHqzdewx0Zpsw7VgnbGlpI90';
+      const sheetName = 'Sheet1';
+      const query = new google.visualization.Query(
+        `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=${sheetName}&tq=${queryString}`
+      );
+
+      query.send(function(response) {
+        if (response.isError()) {
+          document.getElementById('sheet-table').innerText =
+            'Error in query: ' + response.getMessage() + ' ' + response.getDetailedMessage();
+          return;
+        }
+
+        const data = response.getDataTable();
+        const table = new google.visualization.Table(document.getElementById('sheet-table'));
+        table.draw(data, {showRowNumber: true, width: '100%', height: 'auto'});
+      });
+    }
+  </script>
+</body>
+</html>
