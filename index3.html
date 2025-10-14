@@ -8,6 +8,7 @@
         body{
             height: 100vh;
             display: flex;
+            font-family: Arial;
         }
         .pop {
             animation: popIn 0.4s ease;
@@ -16,6 +17,15 @@
             0% { transform: scale(0.5); opacity: 0; }
             70% { transform: scale(1.1); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
+        }
+        .popOut {
+            animation: popOut 0.4s ease forwards;
+        }
+
+        @keyframes popOut {
+            0% { transform: scale(1); opacity: 1; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(0.5); opacity: 0; }
         }
         ul{
             list-style: none;
@@ -29,7 +39,7 @@
             width: 100%;
             box-sizing: border-box;
             border-radius: 6px;
-            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+            /* box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);*/
 
             display: flex;                /* make contents horizontal */
             justify-content: space-between; /* space between text and button */
@@ -105,9 +115,41 @@
         .delete-btn:hover {
             background-color: #a00000; /* darker red on hover */
         }
+
+        #descBox { 
+            position: fixed; 
+            width: 50vw;
+            height: auto;
+            max-height: 50vh;         
+            top: 25%;               
+            left: 25%;              
+            /*transform: translate(-50%, -50%); */
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 9999; 
+            line-height: 1.5;
+            overflow-y: scroll;      
+            box-sizing: border-box;
+            display: none;
+            pointer-events: auto;  /* so users can interact/select text */
+        }
+        #overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4); /* dimmed background, change alpha for darkness */
+            z-index: 9998; /* just below #descBox */
+            display: none; /* hidden by default */
+            pointer-events: auto; /* important: block interactions */
+        }
     </style>
 </head>
 <body>
+    <div id="overlay"></div>
     <div id="gameBox">
         <h2>Prerequisite Search Tool</h2>
         <p>Developed by Shaun Ng for BUA Computer Science Club</p>
@@ -132,118 +174,172 @@
             <li>Add a prerequisite to start! Make sure to also add courses you "should" have credit for – e.g. if you have taken Multivariate Calculus at BUA, input CAS MA 225</li>
         </ul>
     </div>
+    <div id = "descBox">
+        <h2 id = "descBoxCode"></h2>
+        <p id = "descBoxDesc"></p>
+        <button id = "descEsc" onclick = "hideDescBox()" class = "button">OK</button>
+    </div>
     
     <!-- for (let i = 0; i < csvArray.length; i++){
         let unpackedArray = csvArray[i][1].split("OR");
         unpackedArray = unpackedArray.map(part => part.trim());
         console.log(unpackedArray);
     } FOR LATER USE --> 
-
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
     <script>
         
-        csvString = `Class Name,Course Code,Prerequisite 1,Prerequisite 2,Prerequisite 3,Notes
-Mathematical Reasoning in the Elementary Grades: Number Systems,CAS MA 107,,,,
-"Mathematical Reasoning in the Elementary Grades: Algebra, Geometry, and Statistics",CAS MA 108,CAS MA 107 OR SED ME503,,,
-Mathematical Explorations,CAS MA 111,,,,
-Elementary Statistics,CAS MA 113,,,,
-Statistics 1,CAS MA 115,,,,
-Statistics 2,CAS MA 116,CAS MA 115,,,
-Applied Mathematics for Personal Finance,CAS MA 119,,,,
-Calculus for the Life and Social Sciences I,CAS MA 121,,,,
-Calculus for the Life and Social Sciences II,CAS MA 122,CAS MA 121 OR CAS MA 123,,,
-Calculus I,CAS MA 123,,,,
-Calculus II,CAS MA 124,CAS MA 121 OR CAS MA 123,,,
-Discrete Mathematics for Engineering,CAS MA 193,,,,
-Basic Statistics and Probability,CAS MA 213,,,,
-Applied Statistics,CAS MA 214,CAS MA 213 OR CAS MA 115 OR CAS MA 113 OR CDSDS 120 OR CASCS 237,,,
-Multivariate Calculus,CAS MA 225,CAS MA 124 OR CAS MA 129,,,
-Differential Equations,CAS MA 226,CAS MA 225 OR CAS MA 230,,,
-Honors-Level Vector Calculus,CAS MA 230,CAS MA 124 OR CAS MA 129,,,
-Honors-Level Differential Equations,CAS MA 231,CAS MA 225 OR CAS MA 230,,,
-Linear Algebra,CAS MA 242,CAS MA 121 OR CAS MA 123 OR CAS MA 129,,,
-Discrete Mathematics,CAS MA 293,,,,
-Applied Abstract Algebra,CAS MA 294,CAS MA 293,,,
-Writing in Mathematics,CAS MA 301,WR120,,,
-Introduction to Number Theory,CAS MA 341,CAS MA 242,,,
-Senior Independent Work (I),CAS MA 401,Approval,,,
-Senior Independent Work (II),CAS MA 402,Approval,,,
-Advanced Calculus,CAS MA 411,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,
-Complex Variables,CAS MA 412,CAS MA 225 OR CAS MA 230,,,
-Data Science in R,CAS MA 415,CASCS 111 OR CDSDS 110 OR ENGEK 125  ,CAS MA 113 OR CAS MA 115 OR CAS MA 116 OR CAS MA 213 OR CAS MA 214 OR CAS MA 582,,
-Analysis of Variance,CAS MA 416,CAS MA 116 OR CAS MA 214,,,
-Graph Theory,CAS MA 433,CAS MA 242 AND CAS MA 293,,,
-Honors Level Linear Algebra,CAS MA 442,CAS MA 121 OR CAS MA 123 OR CAS MA 129,,,
-Directed Study,CAS MA 491,Consent of Instructor,Application,,
-Directed Study,CAS MA 492,Application,,,
-History of Mathematics,CAS MA 505,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,
-Introduction to Analysis I,CAS MA 511,CAS MA 225 OR CAS MA 230,,,
-Introduction to Analysis II,CAS MA 512,CAS MA 511,,,
-Mathematical Logic,CAS MA 531,CAS MA 293,,,
-Foundations of Mathematics,CAS MA 532,CAS MA 531,,,
-Methods of Scientific Computing,CAS MA 539,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,
-Modern Algebra I,CAS MA 541,CAS MA 242 OR CAS MA 442,,,
-Modern Algebra II,CAS MA 542,CAS MA 541,,,
-Numerical Analysis I,CAS MA 555,CAS MA 225 OR CAS MA 230,,,
-Numerical Analysis II,CAS MA 556,CAS MA 555,CAS MA 242 OR CAS MA 442,,
-Methods of Applied Mathematics 1,CAS MA 561,CAS MA 226 OR CAS MA 230,CAS MA 226 OR CAS MA 231,,
-Methods of Applied Mathematics 2,CAS MA 562,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,
-Introduction to Differential Geometry,CAS MA 563,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,
-Introduction to Topology,CAS MA 564,CAS MA 225 OR CAS MA 230,CAS MA 411 OR CAS MA 511,,
-Mathematical Models in Life Sciences,CAS MA 565,CAS MA 226 OR CAS MA 231,,,
-Statistical Analysis of Point Process Data,CAS MA 568,CAS MA 213,CAS MA 214,,
-Optimization Methods of Operations Research,CAS MA 569,CAS MA 225 OR CAS MA 230 OR CDSDS 122,CAS MA 242 OR CAS MA 442 OR ENGEK 103 OR CDSCS 132,,
-Stochastic Methods of Operations Research,CAS MA 570,CAS MA 225 OR CAS MA 230 OR CDSDS 122,CAS MA 242 OR CAS MA 442 OR ENGEK 103 OR CASCS 132,,
-Qualitative Theory of Ordinary Differential Equations,CAS MA 573,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,
-Linear Models,CAS MA 575,CAS MA 214 OR CAS MA 116,CAS MA 581 OR ENGEK 381 OR ENGEK 500 OR CASCS 237,CAS MA 242 OR ENGEK 103 OR CDSDS 121 OR CAS MA 442 OR CASCS 132,
-Generalized Linear Models,CAS MA 576,CAS MA 575,,,
-Mathematics of Financial Derivatives,CAS MA 577,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
-Bayesian Statistics,CAS MA 578,CAS MA 575,,,
-Numerical Methods for Biological Sciences,CAS MA 579,CAS MA 226 OR CAS MA 231,,,Elementary knowledge of linear algebra
-Probability,CAS MA 581,CAS MA 225 OR CAS MA 230 OR CDSDS 122,,,
-Mathematical Statistics,CAS MA 582,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
-Introduction to Stochastic Processes,CAS MA 583,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
-Time Series and Forecasting,CAS MA 585,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
-Stochastic Methods for Algorithms,CAS MA 586,CAS WR120,CASCS 111 OR CDSDS 110 OR ENGEK 125,CAS MA 225 OR CASCS 235 OR CDSDS 122,
-Nonparametric Statistics,CAS MA 588,CAS MA 582,,,
-Computational Statistics,CAS MA 589,CAS MA 575,,,
-Introduction to Causal Inference,CAS MA 592,CAS MA 575,,,
-Physics of Health Sciences,CAS PY 104,,,,
-Physics 1,CAS PY 105,,,,
-Physics 2,CAS PY 106,CAS PY 105,,,
-Physics of Food and Cooking,CAS PY 107,,,,
-General Physics 1,CAS PY 211,CAS MA 123 OR CAS MA 127,CAS MA 124 OR CAS MA 127,,
-General Physics 2,CAS PY 212,CAS PY 211,CAS MA 124,,
-The Physics in Music,CAS PY 231,,,,
-Principles of Physics 1,CAS PY 251,CAS MA 123,,,
-Principles of Physics 2,CAS PY 252,CAS PY 251,,,
-Waves and Modern Physics,CAS PY 313,CAS PY 211,CAS PY 212,CAS MA 124,
-Modern Physics 1,CAS PY 351,CAS PY 251 OR CAS PY 211,CAS PY 252 OR CAS PY 212,CAS MA 124,
-Methods of Theoretical Physics,CAS PY 355,CAS PY 251 OR CAS PY 212,CAS PY 252 OR CAS PY 212,CAS MA 225,
-Electronics for Scientists,CAS PY 371,CAS MA 124,CAS PY 212 OR CAS PY 252,,
-Electromagnetic Fields and Waves I,CAS PY 405,CAS PY 355,,,
-Electromagnetic Fields and Waves II,CAS PY 406,CAS PY 405,,,
-Intermediate Mechanics,CAS PY 408,CAS PY 355,,,
-Statistical Thermodynamics,CAS PY 410,CAS PY 355,CAS PY 313 OR CAS PY 351,,
-Introduction to Computational Physics,CAS PY 421,CAS PY 351,,,
-Quantum Physics I,CAS PY 451,CAS PY 313 OR CAS PY 351,CAS PY 355,,
-Quantum Physics II,CAS PY 452,CAS PY 451,,,
-Mathematical Physics,CAS PY 501,CAS MA 226,CAS PY 355,,
-Computational Physics (Graduate),CAS PY 502,Consent of Instructor,,,
-Quantum Mechanics I (Graduate),CAS PY 511,CAS PY 451,CAS PY 452,,
-Quantum Mechanics II (Graduate),CAS PY 512,CAS PY 511,,,
-Electromagnetic Theory I,CAS PY 521,CAS PY 405,,,
-Quantum Computing,CAS PY 536,CAS CS 330 OR CAS PY 354,,,
-Interdisciplinary Methods for Quantitative Finance,CAS PY 538,CAS PY 355 OR MET AD 685,,,
-Statistical Mechanics I,CAS PY 541,CAS PY 410,,,
-Introduction to Solid State Physics,CAS PY 543,CAS PY 406 ,CAS PY 410,CAS PY 451,
-Introduction to Particle Physics,CAS PY 551,CAS PY 451 ,CAS PY 452,,
-Cosmological Physics,CAS PY 555,CAS PY 406 ,CAS PY 408,,
-Dynamics of Nonlinear Systems,CAS PY 565,Consent of Instructor,,,
-Introduction to Biological Physics,CAS PY 571,CAS PY 410 OR CAS CH 352,,,
-Advanced Laboratory,CAS PY 581,CAS PY 351,,,`;
-        csvArray = csvString.split('\n').map(line => line.split(','));
+        csvString = `Class Name,Course Code,Prerequisite 1,Prerequisite 2,Prerequisite 3,Prerequisite 4,Prerequisite 5,Description
+Mathematical Reasoning in the Elementary Grades: Number Systems,CAS MA 107,,,,,,"Mathematical Reasoning in the Elementary Grades: Number Systems Required for undergraduates seeking licensure in elementary education, early childhood education,special education, or deaf studies. Focuses on number systems, whole number, decimal and fraction concepts and operations, and number theory. Non-Wheelock students by signed permission only. Does not satisfy CAS Divisional Studies or Math/Stat major. 4 cr. 1st sem. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning I, Oral and/or Signed Communication, Teamwork/Collaboration."
+"Mathematical Reasoning in the Elementary Grades: Algebra, Geometry, and Statistics",CAS MA 108,CAS MA 107 OR SED ME503,,,,,"Undergraduate Prerequisites: (CASMA107 OR SEDME503) - Required for undergraduates seeking licensure in elementary education, special education, or deaf studies. Focuses on topics in algebra, geometry, measurement, and statistics. Non-SED students by signed permission only. Does not satisfy CAS Divisional Studies or Math/Stat major. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Oral and/or Signed Communication, Teamwork/Collaboration."
+Mathematical Explorations,CAS MA 111,,,,,,"Students explore challenging mathematics problems chosen from an array of topics that can be solved in multiple ways. Includes making, testing, and modifying conjectures; constructing proofs; posing new problems; extensive classroom interaction; reflective and other writing. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Oral and/or Signed Communication, Creativity/Innovation."
+Elementary Statistics,CAS MA 113,,,,,,"Elementary Statistics CAS MA 113 may not be taken for credit by any student who has completed any MA course numbered 300 or higher. Students may receive credit for not more than one of the following courses: CAS MA 113, MA 115, or MA 213. Basic concepts of estimation and tests of hypotheses, ideas from probability; one-, two-, and multiple-sample problems. Applications will be in social sciences and students will be able to understand the basics of using a sample to predict uncertainty. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Statistics 1,CAS MA 115,,,,,,"Statistics 1 CAS MA 115 may not be taken for credit by any student who has completed any MA course numbered 300 or higher. Students may receive credit for not more than one of the following courses: CAS MA 113, MA 115, or MA 213. Numerical and graphical summaries of univariate and bivariate data. Basic probability, random variables, binomial distribution, normal distribution. One-sample statistical inference for normal means and binomial probabilities. Primarily for students in the social sciences with limited mathematics preparation. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Statistics 2,CAS MA 116,CAS MA 115,,,,,"Statistics 2 Undergraduate Prerequisites: (CAS MA 115) or equivalent. CAS MA 116 may not be taken for credit by any student who has completed any MA course numbered 300 or higher. Students may receive credit for not more than one of the following courses: CAS MA 116, MA 214, or MA 614. This course introduces basic statistical modeling techniques. One- or two-sample inference for unknown means, proportions and variances, categorical data analysis, introduction to design of experiments and analysis of variance, analysis of simple and multiple linear regression models, non-parametric methods. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Applied Mathematics for Personal Finance,CAS MA 119,,,,,,"Applied Mathematics for Personal Finance Applications of mathematics for personal financial decision-making. Systems of equations, exponential functions, logarithms, probability, descriptive statistics, and numerical simulation, for modeling saving, borrowing, inflation, purchasing power, taxation, government benefits, risk management, insurance, annuities, and investments. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry I, Quantitative Reasoning I. This course also fulfills the learning outcomes for Life Skills. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning I, Social Inquiry I, Critical Thinking."
+Calculus for the Life and Social Sciences I,CAS MA 121,,,,,,"Calculus for the Life and Social Sciences I Students may receive credit for not more than one of the following courses: CAS MA 121 or CAS MA 123. Differentiation and integration of functions of one variable. Same topics as CAS MA 123, but with less emphasis on mathematical generality and more on applications. Especially suitable for students concentrating in the biological and social sciences. Carries MCS Divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Social Inquiry II, Critical Thinking."
+Calculus for the Life and Social Sciences II,CAS MA 122,CAS MA 121 OR CAS MA 123,,,,,"Calculus for the Life and Social Sciences II Undergraduate Prerequisites: (CAS MA 121 OR CAS MA 123) - Students may receive credit for not more than one of the following courses: CAS MA 122, MA 124, or MA 129. Continuation of CAS MA 121. Review of univariate calculus, calculus of the elementary transcendental functions, elementary differential equations, elementary multivariate calculus. Applications to exponential growth, optimization, equilibrium, and dynamic modeling problems. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Social Inquiry II, Critical Thinking."
+Calculus I,CAS MA 123,,,,,,"Calculus I Students may receive credit for not more than one of the following courses: CAS MA 121 or CAS MA 123. Limits; derivatives; differentiation of algebraic and transcendental functions. Applications to maxima, minima, and convexity of functions. The definite integral; the fundamental theorem of integral calculus. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Calculus II,CAS MA 124,CAS MA 121 OR CAS MA 123,,,,,"Calculus II Undergraduate Prerequisites: (CAS MA 121 OR CAS MA 123) - Students may receive credit for not more than one of the following courses: CAS MA 122, MA 124, or MA 129. Logarithmic, exponential, and trigonometric functions. Sequences and series; Taylor's series with the remainder. Methods of integration. Calculus I and II together constitute an introduction to calculus of a function of a single real variable. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Scientific Inquiry II, Critical Thinking."
+Discrete Mathematics for Engineering,CAS MA 193,,,,,,"Discrete Mathematics for Engineering Propositional logic, set theory, relations, combinatorics, graphs. Topics are treated with particular emphasis on applications to the engineering discipline. (Cannot be taken for credit in addition to CAS MA 293.) Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Basic Statistics and Probability,CAS MA 213,,,,,,"Basic Statistics and Probability — Undergraduate Prerequisites: good background in high school algebra. Students may receive credit for not more than one of the following courses: CAS MA 113, MA 115, or MA 213. Elementary treatment of probability densities, means, variances, correlation, independence, the central limit theorem, confidence intervals, and p‑values. Students will be able to answer questions such as how can a pollster use a sample to predict the uncertainty of an election. Carries MCS divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Teamwork/Collaboration. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking, Teamwork/Collaboration."
+Applied Statistics,CAS MA 214,CAS MA 213 OR CAS MA 115 OR CAS MA 113 OR CDSDS 120 OR CASCS 237,,,,,"Applied Statistics — Undergraduate Prerequisites: CAS MA 213 or CAS MA 115 or CAS MA 113 or CDSDS 120 or CASCS 237 or consent of instructor. Students may receive credit for not more than one of the following courses: CAS MA 116, MA 214, or MA 614. Inference about proportions, goodness of fit, student’s t‑distribution, tests for normality; two‑sample comparisons, regression and correlation, tests for linearity and outliers, residual analysis, contingency tables, analysis of variance. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Teamwork/Collaboration. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking, Teamwork/Collaboration."
+Multivariate Calculus,CAS MA 225,CAS MA 124 OR CAS MA 129,,,,,"Multivariate Calculus — Undergraduate Prerequisites: (CAS MA 124 OR CAS MA 129). Vectors, lines, planes. Multiple integration, cylindrical and spherical coordinates. Partial derivatives, directional derivatives, scalar and vector fields, the gradient, potentials, approximation, multivariate minimization, Stokes’s and related theorems. (Cannot be taken for credit in addition to CAS MA 230.) Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Differential Equations,CAS MA 226,CAS MA 225 OR CAS MA 230,,,,,"Differential Equations — Undergraduate Prerequisites: (CAS MA 225 OR CAS MA 230). First‑order linear and separable equations. Second‑order equations and first‑order systems. Linear equations and linearization. Numerical and qualitative analysis. Laplace transforms. Applications and modeling of real phenomena throughout. (Cannot be taken for credit in addition to CAS MA 231.) Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Honors-Level Vector Calculus,CAS MA 230,CAS MA 124 OR CAS MA 129,,,,,"Honors‑Level Vector Calculus — Undergraduate Prerequisites: (CAS MA 124 OR CAS MA 129). Linear algebra: linear transformations and matrices, inner products, cross products. Differentiation: tangent spaces, directional derivatives, gradients, vector fields and flow, divergence, curl. Integration: multiple integrals, line integrals, Green’s theorem, surface integrals, Stokes’s theorem, the divergence theorem. (Cannot be taken for credit in addition to CAS MA 225.) Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Honors-Level Differential Equations,CAS MA 231,CAS MA 225 OR CAS MA 230,,,,,"Honors‑Level Differential Equations — Undergraduate Prerequisites: (CAS MA 225 OR CAS MA 230). Ordinary differential equations with applications to mechanics, biology, and physics. First‑ and second‑order equations, linear and nonlinear systems, Sturm‑Liouville problems, vibrating strings, special functions, power series solutions, regular singular points, Laplace transforms, calculus of variations, isoperimetric problems, and Hamilton’s principle. (Cannot be taken for credit in addition to CAS MA 226.) Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Linear Algebra,CAS MA 242,CAS MA 121 OR CAS MA 123 OR CAS MA 129,,,,,"Linear Algebra — Undergraduate Prerequisites: CAS MA 121 or CAS MA 123 or CAS MA 129 or consent of instructor. Cannot be taken for credit in addition to CAS MA 442 or ENGEK 103. Matrix algebra, solution of linear systems, determinants, Gaussian elimination, fundamental theory, row‑echelon form. Vector spaces, bases, norms. Computer methods. Eigenvalues and eigenvectors, canonical decomposition. Applications. Effective Fall 2019, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Discrete Mathematics,CAS MA 293,,,,,,"Discrete Mathematics — Propositional logic, set theory. Elementary probability theory. Number theory. Combinatorics with applications. Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Applied Abstract Algebra,CAS MA 294,CAS MA 293,,,,,"Applied Abstract Algebra — Undergraduate Prerequisites: (CAS MA 293) or consent of instructor. Abstract algebra and its applications to combinatorics. A first exposure to groups, rings, and fields via significant combinatorial applications. Students who have already received credit for MA 541 or MA 542 may not subsequently receive credit for MA 294. Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Writing in Mathematics,CAS MA 301,WR120,,,,,"Writing in Mathematics — Undergraduate Prerequisites: First Year Writing Seminar (WR120). Prerequisite for this course: First Year Writing Seminar (WR120). Writing in mathematics is distinctive for at least two reasons: i) in addition to written language, mathematical writing involves numbers, symbols, and images; and ii) mathematicians write not only to communicate their work, but more perhaps importantly to clarify and refine their own thinking. In this class, we explore how writing is used to both communicate and facilitate mathematics by participating in the process of writing across a range of discipline‑specific genres, including proof writing and expository writing, for pure or applied math majors who have not yet taken a course involving proof writing, but who intend to do so in the future. Students who do not meet these criteria may only take the course with instructor permission. Effective Spring 2023, this course fulfills a single unit in each of the following BU Hub areas: Writing‑Intensive Course."
+Introduction to Number Theory,CAS MA 341,CAS MA 242,,,,,"Introduction to Number Theory — Undergraduate Prerequisites: (CAS MA 242) or consent of instructor. Study of integers and basic results of number theory. Topics include Linear Diophantine equations, prime numbers and factorization, congruences, and quadratic reciprocity. Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Senior Independent Work (I),CAS MA 401,Approval,,,,,"Senior Independent Work (I) — Undergraduate Prerequisites: approval by the Director of Undergraduate Studies. This course is the first in a two‑semester sequence during which the student conducts a substantial research project under the supervision of a faculty advisor. Effective Fall 2023, this course fulfills a single unit in the following BU HUB areas: Research and Information Literacy."
+Senior Independent Work (II),CAS MA 402,Approval,,,,,"Senior Independent Work (II) — Undergraduate Prerequisites: approval by the Director of Undergraduate Studies. This course is the second in a two‑semester sequence during which the student conducts a substantial research project under the supervision of a faculty advisor. Effective Spring 2024, this course fulfills a single unit in the following BU HUB area: Oral and/or Signed Communication."
+Advanced Calculus,CAS MA 411,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,,,"Advanced Calculus — Undergraduate Prerequisites: ((CAS MA 225 OR CAS MA 230) & (CAS MA 242 OR CAS MA 442)). Extends concepts and techniques of calculus and develops further applications. Topics include higher dimensional calculus, applications of vector analysis, uniform convergence of series, complex series, improper integrals, gamma and beta functions, Stirling's formula, Fourier series and transform."
+Complex Variables,CAS MA 412,CAS MA 225 OR CAS MA 230,,,,,"Complex Variables — Undergraduate Prerequisites: (CAS MA 225 OR CAS MA 230). Basic concepts, results, and applications of complex analysis. Emphasis on computation and applications. Complex plane and functions, differentiability, Cauchy‑Riemann conditions, contour integrals, Cauchy formulas, complex series, residue calculus, applications."
+Data Science in R,CAS MA 415,CASCS 111 OR CDSDS 110 OR ENGEK 125  ,CAS MA 113 OR CAS MA 115 OR CAS MA 116 OR CAS MA 213 OR CAS MA 214 OR CAS MA 582,,,,"Data Science in R — Undergraduate Prerequisites: (CAS CS 111 or CDSDS 110 or ENGEK 125) AND (CAS MA 113 or CAS MA 115 or CAS MA 116 or CAS MA 213 or CAS MA 214 or CAS MA 582) or consent of instructor. Introduction to R, the computer language written by and for statisticians. Emphasis on data exploration, statistical analysis, problem solving, reproducibility, and multimedia delivery."
+Analysis of Variance,CAS MA 416,CAS MA 116 OR CAS MA 214,,,,,"Analysis of Variance — Undergraduate Prerequisites: CAS MA 116 or CAS MA 214 or consent of instructor. Fundamental concepts and analytical skills in analysis of variance, including crossed and nested designs, as well as fixed and random effect models. Trend analysis for repeated measures, expected mean squares, and non‑parametric techniques. SAS is used throughout the course. Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Graph Theory,CAS MA 433,CAS MA 242 AND CAS MA 293,,,,,"Graph Theory — Undergraduate Prerequisites: (CAS MA 242 & CAS MA 293) or consent of instructor. Graph Theory can be used to generalize the concept of what it means for geometric objects to be connected and describe complex systems. Using vertices to represent objects and edges to represent which objects are adjacent to each other, students will be able to analyze the system as a whole. Students explore geometric aspects and algorithmic open problems."
+Honors Level Linear Algebra,CAS MA 442,CAS MA 121 OR CAS MA 123 OR CAS MA 129,,,,,"Honors Level Linear Algebra — Undergraduate Prerequisites: CAS MA 121 or CAS MA 123 or CAS MA 129 or consent of instructor. A thorough development of the fundamentals of linear algebra. Systems of linear equations; matrices, linear transformations, duality; determinants, characteristic and minimal polynomials; diagonalization and normal forms; inner products, unitary and self‑adjoint operators; spectral theory. Applications to physics, probability, and statistics. (Cannot be taken for credit in addition to CAS MA 242.) Effective Fall 2020, this course fulfills a single unit in the following BU Hub area: Critical Thinking."
+Directed Study,CAS MA 491,Consent of Instructor,Application,,,,Directed Study — Undergraduate Prerequisites: consent of instructor and application made through the Mathematics Department.
+Directed Study,CAS MA 492,Application,,,,,Undergraduate Prerequisites: consent of instructor and application made through the Mathematics Department. - DIRECTED STUDY
+History of Mathematics,CAS MA 505,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,,,"Undergraduate Prerequisites: (CASMA225 OR CASMA230) and (CASMA242 or CASMA442); or consent of instructor. - The development of mathematics from Antiquity through the 18th Century. Assuming background in modern mathematics, its roots are systematically pursued in terms of modern techniques, structures, and results. Providing the emergence of mathematical concepts and procedures, a coherent, unifying view of number, geometry, algebra, calculus, and mathematical analysis is presented. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Historical Consciousness."
+Introduction to Analysis I,CAS MA 511,CAS MA 225 OR CAS MA 230,,,,,"Undergraduate Prerequisites: (CASMA225 OR CASMA230) - Graduate Prerequisites: (CASMA225 OR CASMA230) - Fundamental concepts of mathematical reasoning. Properties of the real-number system, elementary point-set theory, metric spaces. Limits, sequences, series, convergence, uniform convergence, continuity. Differentiability for functions of a single variable, Riemann-Stieltjes integration."
+Introduction to Analysis II,CAS MA 512,CAS MA 511,,,,,"Undergraduate Prerequisites: (CASMA511) - Graduate Prerequisites: (CASMA511) - Background of CAS MA 511 used to develop further topics of calculus. Exponential and logarithmic functions, Taylor series, power series, real analytic functions. Differential and integral calculus for functions of several variables. Line and surface integrals, divergence theorem, Stokes's theorem, inverse and implicit function theorems, change of variables. Fourier analysis."
+Mathematical Logic,CAS MA 531,CAS MA 293,,,,,"Undergraduate Prerequisites: (CASMA293) or consent of instructor. - Graduate Prerequisites: (CASMA293) or consent of instructor. - The investigation of logical reasoning with mathematical methods. The syntax and semantics of sentential logic and quantificational logic. The unifying Godel Completeness Theorem, and models of theories. A look at the Godel Incompleteness Theorem and its ramifications. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Philosophical Inquiry and Life's Meanings."
+Foundations of Mathematics,CAS MA 532,CAS MA 531,,,,,"Undergraduate Prerequisites: (CASMA531) - Axiomatic set theory as a foundation for mathematics and as a field of mathematics: Axiom of Choice, the Continuum Hypothesis, and consistency results. Also offered as CAS PH 461."
+Methods of Scientific Computing,CAS MA 539,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,,,"Undergraduate Prerequisites: (CASMA 225 or CASMA 230) & (CASMA 242 or CASMA 442) and programming experience or consent of instructor. - An introduction to topics including computational linear algebra, solutions of linear equations, numerical integration and solution of differential equations, finite element methods, and methods of stochastic simulation (i.e., Monte Carlo methods)."
+Modern Algebra I,CAS MA 541,CAS MA 242 OR CAS MA 442,,,,,"Undergraduate Prerequisites: (CASMA242 OR CASMA442) - Basic properties of groups, Sylow theorems, basic properties of rings and ideals, Euclidean rings, polynomial rings."
+Modern Algebra II,CAS MA 542,CAS MA 541,,,,,"Undergraduate Prerequisites: (CASMA541) or consent of instructor. - Vector spaces and modules, Galois theory, linear transformations and matrices, canonical forms, bilinear and quadratic forms."
+Numerical Analysis I,CAS MA 555,CAS MA 225 OR CAS MA 230,,,,,"Undergraduate Prerequisites: (CASMA225 OR CASMA230) - Graduate Prerequisites: (CASMA225 OR CASMA230) - Numerical solutions of equations, iterative methods, analysis of sequences. Theory of interpolation and functional approximation, divided differences. Numerical differentiation and integration. Polynomial theory. Ordinary differential equations."
+Numerical Analysis II,CAS MA 556,CAS MA 555,CAS MA 242 OR CAS MA 442,,,,"Undergraduate Prerequisites: (CASMA555 & (CASMA242 OR CASMA442)) or consent of instructor. - Graduate Prerequisites: (CASMA555 & (CASMA242 OR CASMA442)) or consent of instructor. - Numerical linear algebra; norms, elimination methods, error analysis, conditioning, eigenvalues, iterative methods, least squares and nonlinear functional minimization. Partial differentiation equation boundary value and initial value problems. Finite element methods. Legendre and Chebyshev polynomials. Treatment in greater depth of selected topics from CAS MA 555."
+Methods of Applied Mathematics 1,CAS MA 561,CAS MA 226 OR CAS MA 230,CAS MA 226 OR CAS MA 231,,,,"Undergraduate Prerequisites: CASMA 226 or CASMA 230 and CASMA 226 or CASMA231; or consent of instructor - Graduate Prerequisites: graduate standing. - Derivation and analysis of the classical equations of mathematical physics; heat equation, wave equation, and potential equation. Initial boundary value problems, method of separation of variables, eigenvalue problems, eigenfunction expansions. Fourier analysis. Existence and uniqueness of solution."
+Methods of Applied Mathematics 2,CAS MA 562,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,,,"Undergraduate Prerequisites: (CASMA 225 or CASMA 230) and (CASMA 226 or CASMA 231) and (CASMA 242 or CASMA 442) or consent of instructor - Calculus of variations, first-order non-linear partial differential equations, Hamilton-Jacobi theory, Rayleigh-Ritz procedure, perturbation methods."
+Introduction to Differential Geometry,CAS MA 563,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,,,"Undergraduate Prerequisites: (CASMA225 OR CASMA230) and (CASMA226 OR CASMA231) and (CASMA242 or CASMA442); or consent of i nstructor. - Study of local properties of curves and surfaces in the three-dimensional Euclidean space; curvature, torsion, Frenet equations, tangent and normal planes; first and second fundamental form; developable surfaces, principal, mean and Gaussian curvature; vector fields, covariant differentiation, geodesics, surfaces of constant curvature."
+Introduction to Topology,CAS MA 564,CAS MA 225 OR CAS MA 230,CAS MA 411 OR CAS MA 511,,,,Undergraduate Prerequisites: (CASMA225 OR CASMA230) and (CASMA411 or CASMA511); or consent of instructor. - Introduction to point set and algebraic topology. Topological spaces and continuity. Compactness and connectedness. Metrizable topological spaces. Product topology and Tychonoff's theorem. The fundamental group and van Kampen's theorem. Covering spaces and the universal cover.
+Mathematical Models in Life Sciences,CAS MA 565,CAS MA 226 OR CAS MA 231,,,,,"Undergraduate Prerequisites: (CASMA226 OR CASMA231) - Graduate Prerequisites: (CASMA226 OR CASMA231) - An introduction to mathematical modeling, using applications in the biological sciences. Mathematics includes linear difference and differential equations, and an introduction to nonlinear phenomena and qualitative methods. An elementary knowledge of differential equations and linear algebra is assumed."
+Statistical Analysis of Point Process Data,CAS MA 568,CAS MA 213,CAS MA 214,,,,"Undergraduate Prerequisites: CASMA 213 and CASMA 214 or consent of instructor. Graduate Prerequisites: graduate standing. - Introduces the theory of point processes and develops practical problem-solving skills to construct models, assess goodness-of-fit, and perform estimation from point process data. Applications to neural data, earthquake analysis, financial modeling, and queuing theory."
+Optimization Methods of Operations Research,CAS MA 569,CAS MA 225 OR CAS MA 230 OR CDSDS 122,CAS MA 242 OR CAS MA 442 OR ENGEK 103 OR CDSCS 132,,,,"Undergraduate Prerequisites: (CASMA 225 or CASMA 230 or CDSDS 122) AND (CASMA 242 or CASMA 442 or ENGEK 103 or CDSCS 132) or consent of instructor. - Graduate Prerequisites: graduate standing. - Optimization of linear functions: linear programming, simplex method; transportation, assignment, and network problems. Optimization of non-linear functions: unconstrained optima, constrained optima and Lagrange multipliers, Kuhn-Tucker conditions, calculus of variations, and Euler's equation."
+Stochastic Methods of Operations Research,CAS MA 570,CAS MA 225 OR CAS MA 230 OR CDSDS 122,CAS MA 242 OR CAS MA 442 OR ENGEK 103 OR CASCS 132,,,,"Undergraduate Prerequisites: (CASMA 225 or CASMA 230 or CDSDS 122) AND (CASMA 242 or CASMA4 42 or ENGEK 103 or CASCS 132) or consent of instructor) - Poisson processes, Markov chains, queuing theory. Matrix differential equations, differential-difference equations, probability-generating functions, single- and multiple-channel queues, steady-state and transient distributions."
+Qualitative Theory of Ordinary Differential Equations,CAS MA 573,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,,,"Undergraduate Prerequisites: (CASMA 225 or CASMA 230) and (CASMA 226 OR CASMA 231) and (CASMA 242 OR CASMA 442) or consent of instructor. - Eigenvalues, eigenvectors, Jordan normal forms. Linear systems of differential equations, Phase portrait, Hamiltonian systems, stability theory. Applications to systems arising in mechanics, economics, ecology, electrical circuit theory, etc."
+Linear Models,CAS MA 575,CAS MA 214 OR CAS MA 116,CAS MA 581 OR ENGEK 381 OR ENGEK 500 OR CASCS 237,CAS MA 242 OR ENGEK 103 OR CDSDS 121 OR CAS MA 442 OR CASCS 132,,,"Undergraduate Prerequisites: (CASMA 214 or CASMA 116) AND (CASMA 581 or ENGEK 381 or ENGEK 500 or CASCS 237) AND (CASMA 242 or ENGEK 103 or CDSDS 121 or CASMA 442 or CASCS 132) or consent of instructor. - Post-introductory course on linear models. Topics include simple and multiple linear regression, regression with polynomials or factors, analysis of variance, weighted and generalized least squares, transformations, regression diagnostics, variable selection, and extensions of linear models. Effective Fall 2019, this course fulfills a single unit in the BU Hub area: Quantitative Reasoning II, Teamwork/Collaboration."
+Generalized Linear Models,CAS MA 576,CAS MA 575,,,,,"Undergraduate Prerequisites: (CASMA575) or consent of instructor. - Covers topics in linear models beyond MA 575: generalized linear models, analysis of binary and polytomous data, log-linear models, multivariate response models, non-linear models, graphical models, and relevant model selection techniques. Additional topics in modern regression as time allows."
+Mathematics of Financial Derivatives,CAS MA 577,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,,,Undergraduate Prerequisites: (CASMA 581 or ENGEK 381 or ENGEK 500); or consent of instructor. - Develops the probabilistic tools used in finance and presents methodologies used in pricing financial derivatives. No previous knowledge of finance required.
+Bayesian Statistics,CAS MA 578,CAS MA 575,,,,,"Undergraduate Prerequisites: CASMA 575 or consent of instructor. - Principles and methods of Bayesian statistics. Includes subjective probability, Bayes rule, posterior distributions, predictive distributions, computationally based inference (Monte Carlo integration, Markov chain simulation), hierarchical models, mixture models, model checking, and Bayesian model selection methods."
+Numerical Methods for Biological Sciences,CAS MA 579,CAS MA 226 OR CAS MA 231,,,,,"Undergraduate Prerequisites: (CASMA226 OR CASMA231) or equivalent, and elementary knowledge of linear algebra. - Introduction to numerical methods for studying mathematical models of biological systems. Emphasizes development, accuracy, performance, stability, and application to biological systems."
+Probability,CAS MA 581,CAS MA 225 OR CAS MA 230 OR CDSDS 122,,,,,"Undergraduate Prerequisites: (CASMA 225 OR CASMA 230 or CDSDS 122) or consent of instructor. - Graduate Prerequisites: same as undergraduate. - Basic probability, conditional probability, independence, discrete and continuous random variables, mean and variance, functions of random variables, moment generating function, jointly distributed random variables, conditional distributions, independent random variables, law of large numbers, central limit theorem. Cannot be taken for credit with CASMA 381."
+Mathematical Statistics,CAS MA 582,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,,,"Undergraduate Prerequisites: (CASMA 581 or ENGEK 381 or ENGEK 500) or consent of instructor. - Point estimation (unbiasedness, efficiency, consistency, sufficiency), minimum variance unbiased estimators, Rao-Blackwell theorem, Rao-Cramer inequality, maximum likelihood and method of moments estimation, interval estimation, hypothesis tests (uniformly most powerful, likelihood ratio, chi-square)."
+Introduction to Stochastic Processes,CAS MA 583,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,,,"Undergraduate Prerequisites: CASMA 581 or ENGEK 381 or ENGEK 500 or consent of instructor. - Basic concepts and techniques of stochastic processes with models for practical problems. Topics include Markov chains, Poisson process, birth and death processes, queuing theory, renewal processes, reliability."
+Time Series and Forecasting,CAS MA 585,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,,,"Undergraduate Prerequisites: CASMA 581 or ENGEK 381 or ENGEK 500 or consent of instructor. - Autocorrelation and partial autocorrelation functions, stationary and nonstationary processes, ARIMA and Seasonal ARIMA modeling, diagnostics, forecasting, ARCH and GARCH models for financial data, volatility estimation, long-range dependence, state-space models."
+Stochastic Methods for Algorithms,CAS MA 586,CAS WR120,CASCS 111 OR CDSDS 110 OR ENGEK 125,CAS MA 225 OR CASCS 235 OR CDSDS 122,,,"Undergraduate Prerequisites: First-Year Writing Seminar (e.g., WR 120); and (CASCS 111 or CDSDS 110, or ENGEK 125) and (CASMA 225 or CASCS 235 or CDSDS 122) and (CASMA 242 or CASMA 442 or CASCS 132 or CDSDS 121 or ENGEK 103) and (CASMA 581 or CASCS 237 or ENGEK 381 or ENGEK 500) or consent of instructor. - Application of stochastic process theory to design and analyze algorithms in statistics and machine learning, focusing on Markov chain Monte Carlo and stochastic optimization. Emphasizes theory, numerical experiments, and expository writing. Effective Fall 2023, fulfills BU Hub areas: Writing-Intensive Course, Creativity/Innovation."
+Nonparametric Statistics,CAS MA 588,CAS MA 582,,,,,"Undergraduate Prerequisites: CASMA 582 or consent of instructor. - Theory and logic behind nonparametric techniques including order statistics, runs tests, goodness of fit, rank-order tests (location and scale), measures of association, analysis of variance, asymptotic relative efficiency."
+Computational Statistics,CAS MA 589,CAS MA 575,,,,,"Undergraduate Prerequisites: CASMA 575 or consent of instructor. - Topics in computational statistics relevant to modern applications: random number generation, sampling, Monte Carlo methods, computational inference, MCMC methods, graphical models, data partitioning, bootstrapping. Emphasizes conceptual understanding through applications."
+Introduction to Causal Inference,CAS MA 592,CAS MA 575,,,,,Undergraduate Prerequisites: CASMA 575 or consent of instructor. - Concepts and methods for causal inference in experimental and non-experimental data settings. Covers how to estimate causal effects and the limitations of association implying causation.
+Physics of Health Sciences,CAS PY 104,,,,,,"Undergraduate Prerequisites: some knowledge of algebra and trigonometry. - PY104 is a one semester introduction to the basic physics concepts that relate to the health sciences. Material covered is selected from a range of topics, such as include Kinematics and Dynamics, Newton's Laws, Statics, Momentum, Work and Energy, Mechanical Waves, Electric Charge and Force, Capacitance and Resistance, Electric Circuits, and Properties of Electromagnetic Waves, Atomic and Nuclear Physics, and Medical Imaging. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry I, Quantitative Reasoning I, Critical Thinking."
+Physics 1,CAS PY 105,,,,,,"The CAS PY 105/106 sequence satisfies premedical requirements. PY105 covers some of the basic principles underlying the physics of everyday life, including forces and motion, momentum and energy, harmonic motion, rotation, and heat and thermodynamics. Carries natural science divisional credit (with lab) in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry I, Quantitative Reasoning I, Critical Thinking."
+Physics 2,CAS PY 106,CAS PY 105,,,,,"Undergraduate Prerequisites: (CASPY105) or equivalent. - The CAS PY 105/106 sequence satisfies premedical requirements. PY106 covers some of the basic principles underlying the physics of everyday life, including electricity and magnetism, direct-current circuits, waves, optics, and modern physics. Carries natural science divisional credit (with lab) in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry II, Quantitative Reasoning II, Critical Thinking."
+Physics of Food and Cooking,CAS PY 107,,,,,,"Physical science concepts of thermal / soft matter physics and molecular biophysics such as phase transitions and gelation, viscosity, elasticity illustrated via cooking. Labs and demos using molecular gastronomy methods of sous-vide cooking, pressure cooking, making desserts, cheese, emulsions, foams, gels, ice creams. Carries natural science divisional credit (with lab) in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry I, Quantitative Reasoning I, Critical Thinking."
+General Physics 1,CAS PY 211,CAS MA 123 OR CAS MA 127,CAS MA 124 OR CAS MA 127,,,,"Undergraduate Prerequisites: (CASMA123) or consent of instructor for students concurrently taking MA 123. ; Undergraduate Corequisites: (CASMA124 OR CASMA127) - Calculus-based introduction to basic principles of physics, emphasizing Newtonian mechanics, conservation laws, and thermodynamics. For science majors and engineers, and for premedical students who seek a more analytical course than CAS PY 105/106. Interactive, student-centered lectures, discussion, and laboratory. Carries natural science divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry I, Quantitative Reasoning I, Critical Thinking, Teamwork/Collaboration."
+General Physics 2,CAS PY 212,CAS PY 211,CAS MA 124,,,,"Undergraduate Prerequisites: (CASPY211 & CASMA124) or consent of instructor for students concurrently taking MA 123. - Calculus-based introduction to basic principles of physics, emphasizing electromagnetism, circuits, and optics. For science majors and engineers, and for premedical students who seek a more analytical course than CAS PY 105/106. Interactive, student-centered lectures, discussion, and laboratory. Carries natural science divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry II, Quantitative Reasoning II, Critical Thinking, Teamwork/Collaboration."
+The Physics in Music,CAS PY 231,,,,,,"Undergraduate Prerequisites: musical performance experience, or some familiarity with the notes on the musical clef, or consent of instructor (no physics prerequisite). - An introduction to musical acoustics, which covers vibrations and waves in musical systems and sound production, intervals and the construction of musical scales, tuning and temperament, the percussion instruments, the piano, the string, woodwind and brass instruments, room acoustics, the human ear and psychoacoustical phenomena important to musical performance and perception. Examples from the musical literature that illustrate various acoustical effects are covered. Some aspects of electronic music are also discussed. Satisfies CAS natural science divisional credit. Effective Fall 2024, this course fulfills a single unit in each of the following BU Hub areas: Critical Thinking, Quantitative Reasoning I, Scientific Inquiry I."
+Principles of Physics 1,CAS PY 251,CAS MA 123,,,,,"Undergraduate Prerequisites: (CASMA123) or equivalent. ; Undergraduate Corequisites: (CASMA124 OR CASMA127)or consent of instructor for students currently enrolled in CAS MA 12 3. - Introduction to mechanics, conservation laws, rotation, waves, and thermodynamics. Primarily for physics, mathematics, and astronomy majors, but open to other students with a strong background in mathematics. Carries natural science divisional credit (with lab) in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry I, Quantitative Reasoning I, Critical Thinking, Teamwork/Collaboration."
+Principles of Physics 2,CAS PY 252,CAS PY 251,,,,,"Undergraduate Prerequisites: (CASPY251) or equivalent. - Introduction to electric and magnetic fields, circuits, electromagnetic waves, and optics. Primarily for physics, mathematics, and astronomy majors, but open to other students with a strong background in mathematics. Carries natural science divisional credit (with lab) in CAS. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry II, Quantitative Reasoning II, Critical Thinking. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry II, Quantitative Reasoning II, Critical Thinking, Teamwork/Collaboration."
+Waves and Modern Physics,CAS PY 313,CAS PY 211,CAS PY 212,CAS MA 124,,,"Undergraduate Prerequisites: (CASPY211 & CASPY212 & CASMA124) - Graduate Prerequisites: (CASPY211 & CASPY212 & CASMA124) - Waves and physical optics, relativistic mechanics, experimental foundations of quantum mechanics, atomic structure, physics of molecules and solids, atomic nuclei and elementary particles. Along with CAS PY 211, 212, PY 313 completes a three-semester introductory sequence primarily intended for students of engineering. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Scientific Inquiry II, Critical Thinking."
+Modern Physics 1,CAS PY 351,CAS PY 251 OR CAS PY 211,CAS PY 252 OR CAS PY 212,CAS MA 124,,,"Undergraduate Prerequisites: (CASPY251 & CASPY252) (or CASPY211, CASPY212) and CASMA124. ; Undergraduate Corequisites: (CASMA225) - This course traces the historical and intellectual developments that led to the formulation of modern physics. It introduces students to special relativity, quantum mechanics, classical and quantum statistics, emphasizing scientific inquiry and critical thinking. Labs are a required course component. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Historical Consciousness, Scientific Inquiry II, Critical Thinking."
+Methods of Theoretical Physics,CAS PY 355,CAS PY 251 OR CAS PY 212,CAS PY 252 OR CAS PY 212,CAS MA 225,,,"Undergraduate Prerequisites: ( (CASPY251 & CASPY252 & CASMA225) OR (CASPY211 & CASPY212 & CASM A225)) or consent of instructor. - Survey of mathematical and computational methods used in modern theoretical physics. Vectors, fields, differential and integral vector calculus. Matrices, matrix transformations, rotations, eigenvalues and eigenvectors. Function spaces, orthonormal functions, Fourier analysis, bras and kets. Basics of ordinary and partial differential equations with solutions by series and numerical methods. Complex variables and analytic functions. Scientific programming in python, computational visualization and numerical methods complementing each of the analytic topics. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Digital/Multimedia Expression."
+Electronics for Scientists,CAS PY 371,CAS MA 124,CAS PY 212 OR CAS PY 252,,,,"Undergraduate Prerequisites: (CASMA124 & (CASPY212 OR CASPY252)) or consent of instructor. - A survey of practical electronics for all College of Arts and Sciences science students wishing to gain a working knowledge of electronic instrumentation, and in particular, its construction. Two four-hour laboratory-lecture sessions per week. Effective Spring 2020 this course fulfills a single unit in each of the following BU Hub areas: Digital/Multimedia Expression, Creativity/Innovation, Research and Information Literacy."
+Electromagnetic Fields and Waves I,CAS PY 405,CAS PY 355,,,,,Undergraduate Prerequisites: (CASPY355) or consent of instructor. - Electrostatics; electric fields in matter; magnetostatics; Laplace's equation; magnetic fields in matter; electrodynamics; conservation laws.
+Electromagnetic Fields and Waves II,CAS PY 406,CAS PY 405,,,,,Undergraduate Prerequisites: (CASPY405) or consent of instructor. - Electromagnetic waves; potentials and fields of moving charges; radiation; electrodynamics and special relativity.
+Intermediate Mechanics,CAS PY 408,CAS PY 355,,,,,"Undergraduate Prerequisites: (CASPY355) - Dynamics of particles and rigid bodies. Chaos and phase space. Oscillatory motion, motion under a central force, and scattering off a central potential. Non-inertial frames of reference. Lagrangian and Hamiltonian dynamics. Coupled oscillations, normal modes, and continuum mechanics."
+Statistical Thermodynamics,CAS PY 410,CAS PY 355,CAS PY 313 OR CAS PY 351,,,,"Undergraduate Prerequisites: (CASPY355) and (CASPY313 or CASPY351); or consent of instructor. - The laws of thermodynamics, statistical and information basis of thermodynamics, ensemble theory, equilibrium statistical mechanics and its application to physical systems of interest, irreversibility."
+Introduction to Computational Physics,CAS PY 421,CAS PY 351,,,,,Undergraduate Prerequisites: (CASPY351) or consent of instructor. - Undergraduate-level introduction to computer programming and methods used to formulate and solve physics problems on the computer. Also touches on more advanced topics such as parallel computing and graphical visualization.
+Quantum Physics I,CAS PY 451,CAS PY 313 OR CAS PY 351,CAS PY 355,,,,Undergraduate Prerequisites: (CASPY313 OR CASPY351) AND CASPY355); or consent of instructor. - Uncertainty principle; Schrödinger wave equation and applications; operators; hermitian operators and unitary transformations; harmonic oscillator; angular momentum and spin; hydrogen atom.
+Quantum Physics II,CAS PY 452,CAS PY 451,,,,,"Undergraduate Prerequisites: (CASPY451) or consent of instructor. - Degenerate and non-degenerate perturbation theory: hydrogen fine structure, Zeeman effect, helium splitting; time-dependent perturbation theory; Variational Principle; Adiabatic Approximation; scattering theory."
+Mathematical Physics,CAS PY 501,CAS MA 226,CAS PY 355,,,,"Undergraduate Prerequisites: (CASMA226 & CASPY355) or equivalent. - Graduate Prerequisites: (CASMA226 & CASPY355) or equivalent. - Introduction to complex variables and residue calculus, asymptotic methods, and conformal mapping; integral transforms; ordinary and partial differential equations; non-linear equations; integral equations."
+Computational Physics (Graduate),CAS PY 502,Consent of Instructor,,,,,"Undergraduate Prerequisites: consent of instructor. - Graduate Prerequisites: consent of instructor. - Fundamental methods of computational physics and applications; numerical algorithms; linear algebra, differential equations; computer simulation; vectorization, parallelism, and optimization. Examples and projects on scientific applications."
+Quantum Mechanics I (Graduate),CAS PY 511,CAS PY 451,CAS PY 452,,,,"Undergraduate Prerequisites: (CASPY451 & CASPY452) - Graduate Prerequisites: (CASPY451 & CASPY452) - General theory of quantum mechanics, including the Schrodinger, Heisenberg, and interaction pictures. The path integral formulation. Angular momentum: orbital and spin angular momentum, addition of angular momenta, Wigner-Eckart theorem. Scattering theory: time-independent, partial waves and phase shift, identical particles, time dependent, and propagators."
+Quantum Mechanics II (Graduate),CAS PY 512,CAS PY 511,,,,,"Undergraduate Prerequisites: (CASPY511) - Graduate Prerequisites: (CASPY511) - Continuation of CAS PY 511. Degenerate and nondegenerate perturbation theory. Second quantization of nonrelativistic systems with applications to scattering, lifetime of excited atomic states, many-body problems. Relativistic quantum mechanics: Klein-Gordon equation, Dirac equation."
+Electromagnetic Theory I,CAS PY 521,CAS PY 405,,,,,"Undergraduate Prerequisites: (CASPY405) - Graduate Prerequisites: (CASPY405) - Vector and tensor analysis. Electrostatics, uniqueness, electrostatic energy, capacitance. Boundary value problems, conformal mapping, variable separation, Green's functions. Multipole expansion, electric polarization, atomic models, anisotropic media. Contour integration and application to frequency-dependent dielectric constant. Dielectrics, electrostatic energy, boundary value problems."
+Quantum Computing,CAS PY 536,CAS CS 330 OR CAS PY 354,,,,,"Undergraduate Prerequisites: (CASCS330 OR CASPY354) or equivalent. - Quantum physics as a powerful computational paradigm. Quantum bits (qubits), qubit operations and quantum gates, computation, and algorithms. Computational complexity classes, and efficiency of classical vs. quantum computers. Quantum Fourier transform and Shor's factorization algorithm. Physical implementation of quantum computation. Also offered as CAS CS 536."
+Interdisciplinary Methods for Quantitative Finance,CAS PY 538,CAS PY 355 OR MET AD 685,,,,,"Undergraduate Prerequisites: (CASPY355 OR METAD685) or equivalent; or consent of instructor. - Expands upon the foundations of finance theory with interdisciplinary approaches from statistical physics and machine learning. Equips the students with the Python tools to tackle a broad range of problems in quantitative financial analysis and combines the study of relevant financial concepts with computational implementations. Students learn to use packages like Numpy, Pandas, Statsmodels and Scikit, which are commonly used in research and in the industry."
+Statistical Mechanics I,CAS PY 541,CAS PY 410,,,,,"Undergraduate Prerequisites: (CASPY410) - Graduate Prerequisites: (CASPY410) - Probability theory. Ensembles. Steepest descent methods. Paramagnetism, ideal gas, Einstein model, adsorption isotherms. Thermodynamics, Maxwell relations, heat capacity. Bose and Fermi gases. Electrons in metals, white dwarf stars, black-body radiation, phonons, Bose-Einstein condensation. Interacting systems, virial expansion, Van der Waals gas. Phase transitions: mean-field theories, spin systems."
+Introduction to Solid State Physics,CAS PY 543,CAS PY 406 ,CAS PY 410,CAS PY 451,,,"Undergraduate Prerequisites: (CASPY406 & CASPY410 & CASPY451) or consent of instructor. - Graduate Prerequisites: (CASPY406 & CASPY410 & CASPY451) - An introduction to crystal structure; lattice vibrations; electronic energy bands and Fermi surfaces; semiconductors, conductors, and insulators; superconductivity and magnetism."
+Introduction to Particle Physics,CAS PY 551,CAS PY 451 ,CAS PY 452,,,,Undergraduate Prerequisites: (CASPY451 & CASPY452) - Graduate Prerequisites: (CASPY451 & CASPY452) - Fundamental particles and their symmetries. Isospin and flavor. Discrete symmetries. Phenomenology of weak and strong interactions. Introduction to detector techniques.
+Cosmological Physics,CAS PY 555,CAS PY 406 ,CAS PY 408,,,,"Undergraduate Prerequisites: (CASPY 406 & CASPY 408), or consent of instructor. CASPY 410 is recommended but not required. - Early universe cosmology: inflation, thermodynamics in an expanding universe with radiation, matter, vacuum energy. Growth of density perturbations, cosmic microwave background, large scale structure. The cosmological standard model and open questions, dark matter, dark energy, neutrinos."
+Dynamics of Nonlinear Systems,CAS PY 565,Consent of Instructor,,,,,"Undergraduate Prerequisites: consent of instructor. - Introduces the modern approach to the dynamics of nonlinear systems, which approach is often called ""nonlinear science,"" a term that stresses the interdisciplinary applications of nonlinear dynamics that go well beyond classical mechanics to include examples from all the natural sciences, engineering, and even social sciences and medicine. Organized around three ""paradigms"" of nonlinear science: (1) chaos and fractals; 2) ""solitons"" and coherent structures; and 3) patterns and pattern selection and will involve analytical, computational, and experimental studies."
+Introduction to Biological Physics,CAS PY 571,CAS PY 410 OR CAS CH 352,,,,,"Undergraduate Prerequisites: (CASPY410 OR CASCH352) may be taken concurrently as a co-requisite. - Introduction to biomolecular forces, energy flow, information and thermodynamics in biological systems. Nucleic acid, protein, and biomembrane structure. Mechanisms of transport and signaling in biological membranes. Biophysical techniques including spectroscopy. Emphasis on the physical principles underlying biological structure and function."
+Advanced Laboratory,CAS PY 581,CAS PY 351,,,,,"Undergraduate Prerequisites: (CASPY351) First Year Writing Seminar (e.g., WR 100 or WR 120) - Classical experiments in atomic and nuclear physics, development of new experiments, basic research projects. Experiments include magnetic resonance, nuclear-decay studies, Zeeman effect, holography, black-body radiation, X-ray diffraction, Mossbauer studies, and flux quantization, positron annihilation. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Writing-Intensive Course, Oral and/or Signed Communication, Research and Information Literacy."
+Introductory Microeconomic Analysis,CAS EC 101,,,,,,"The first semester of a standard two-semester sequence for those considering further work in management or economics. Coverage includes economics of households, business firms, and markets; consumer behavior and the demand for commodities; production, costs, and the supply of commodities; price determination; competition and monopoly; efficiency of resource allocation; governmental regulation; income distribution; and poverty. Effective Fall 2018, this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry I, Critical Thinking. In 2019-20 this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry I, Ethical Reasoning, Critical Thinking."
+Introductory Macroeconomic Analysis,CAS EC 102,,,,,,"The second semester of a standard two-semester sequence for those considering further work in management or economics. National economic performance; the problems of recession, unemployment, and inflation; money creation, government spending, and taxation; economic policies for full employment and price stability; and international trade and payments. Carries social science divisional credit in CAS. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Social Inquiry I. Effective Fall 2019, this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry I, Global Citizenship and Intercultural Literacy."
+Intermediate Microeconomic Analysis,CAS EC 201,CAS EC 101,CAS MA 121 OR CAS MA 123,,,,"Undergraduate Prerequisites: (CASEC101) and (CAS MA 121 or CAS MA 123) or equivalent. - Determination of commodity prices and factor prices under the differing market conditions of competition and monopoly. Effective Fall 2019, this course fulfills a single unit in the following BU Hub areas: Social Inquiry II, Critical Thinking."
+Intermediate Macroeconomic Analysis,CAS EC 202,CAS EC 102,,,,,"Undergraduate Prerequisites: (CASEC102) - Determination of aggregate income and employment. Analysis of fiscal and monetary policy. Inflation and income policy. Problems of the open economy. Effective Fall 2019, this course fulfills a single unit in the following BU Hub areas: Social Inquiry II, Critical Thinking"
+Empirical Economics 1,CAS EC 203,CAS EC 101,CAS EC 102,,,,"Undergraduate Prerequisites: (CASEC101 & CASEC102) - First semester of a two-semester sequence of empirical techniques used in economic analysis. Statistical concepts are presented and applied to a variety of economics problems. Extensive use of the statistical software package STATA will be made. Effective Fall 2018, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning I."
+Empirical Economics 2,CAS EC 204,CAS EC 101,CAS EC 203,CAS EC 102,,,"Undergraduate Prerequisites: (CASEC101 & CASEC102) and CAS EC203 (or equivalent). - Second semester of a two-semester sequence of empirical techniques used in economic analysis. Statistical concepts are presented and applied to a variety of economics problems. Extensive use of the statistical software package STATA will be made. Builds on the material in EC203, developing more complex statistical techniques and applications. Effective Fall 2019, this course fulfills a single unit in the following BU Hub area: Quantitative Reasoning II. Effective Fall 2022, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Research and Information Literacy."
+Intermediate Microeconomic Theory,CAS EC 221,CAS EC 101,CAS EC 102,CAS MA 225,,,"Undergraduate Prerequisites: (CASEC101 & CASEC102 & CASMA225) - A mathematically rigorous approach to intermediate microeconomic theory. Effective Fall 2023, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning I, Social Inquiry II, Critical Thinking."
+Intermediate Macroeconomic Theory,CAS EC 222,CAS EC 221,,,,,"Undergraduate Prerequisites: CAS EC 101, CAS EC 102, CAS MA 225, as well as CAS EC 221. - A mathematically rigorous approach to intermediate macroeconomic theory. Effective Fall 2023, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning I, Social Inquiry II, Critical Thinking."
+Statistical Analysis,CAS EC 223,CAS EC 101,CAS EC 102,CAS MA 225,,,"Undergraduate Prerequisites: (CASEC101 & CASEC102 & CASMA225) - This is an introductory mathematical statistics course, covering probability theory, statistical inference and an introduction to regression analysis. The course aims at providing students with the necessary background to progress to higher level econometrics and applied economics courses. Effective Fall 2023, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning I, Critical Thinking."
+Econometric Analysis,CAS EC 224,CAS EC 101,CAS EC 102,CAS EC 223,CAS MA 225,CAS MA 242,"Undergraduate Prerequisites: (CASEC101 & CASEC102 & CASEC223 & CASMA225 & CASMA242) - Standard econometric methods for empirical economic research, developed in a mathematically rigorous framework using linear algebra. Effective Fall 2023, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Critical Thinking."
+Economics of Less-Developed Regions,CAS EC 320,CAS EC 101,CAS EC 102,,,,"Undergraduate Prerequisites: (CASEC101 & CASEC102) - Theoretical and empirical examination of the structural changes associated with the process of economic development; special reference to poor regions and countries; rigorous analysis of criteria for policy judgments in developing planning and programming. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Ethical Reasoning, Social Inquiry II."
+Behavioral Economics,CAS EC 323,CAS EC 201,CAS EC 203,,,,"Undergraduate Prerequisites: (CASEC201 & CASEC203) - Introduction to a new field in economics that challenges the traditional model of rational decision-making and uses research in psychology to construct alternative models. Covers the theory of choice under certainty, uncertainty, and temptation; biases in judgment; social preferences. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry II, Critical Thinking."
+The Economics of Poverty and Discrimination in the United States,CAS EC 325,CAS EC 303 OR CAS EC 203,,,,,"Undergraduate Prerequisites: (CASEC201 & CASEC305) (or CASEC203 or CASEC303). - Examines who is poor in the United States and how the evidence of poverty has changed over time. Various economic theories for the causes of poverty and discrimination are presented for examination and discussion. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: The Individual in Community, Quantitative Reasoning II, Critical Thinking."
+Urban and Regional Economics,CAS EC 328,CAS EC 201,CAS EC 203,,,,"Undergraduate Prerequisites: (CASEC201 & CASEC203) - Provides a broad introduction to modern regional and urban economics. In the first part of the course, we attempt to understand how and why cities grow and develop. In the second part of the course, we try to analyze why cities adopt different policies. In the third part of the course, we overview the issues of neighborhood inequality and segregation. If time remains, we will overview several other recent topics about urban and regional economics. Effective Fall 2021, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Social Inquiry II."
+Market Structure and Economic Performance,CAS EC 332,CAS EC 201,,,,,"Undergraduate Prerequisites: (CASEC201) - Structure of the American economy. The theory of imperfect competition. Topics include firm concentration and conglomeration, consumer ignorance and market failure, and advertising and technological change as part of market performance. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Social Inquiry II, Critical Thinking."
+Market Organization and Public Policy,CAS EC 333,CAS EC 201 OR CAS EC 332,,,,,"Undergraduate Prerequisites: (CASEC201 OR CASEC332) - Introduction to antitrust and regulatory policy. Studies sources of market inefficiency and historical and current policy towards topics such as collusion, merger, monopolization, and regulatory treatment of competition issues. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Ethical Reasoning, Historical Consciousness, Critical Thinking."
+Economic Analysis of Legal Issues,CAS EC 337,CAS EC 201,WR 120,,,,"Undergraduate Prerequisites: (CASEC201) First Year Writing Seminar (e.g., WR 100 or WR 120) - Economic analysis of current important legal issues. Contributions of economics to analysis of contracts, torts property, and crime. Effects of property rights on allocation of resources and distribution of income. Market and nonmarket schemes of regulating the environment. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Writing-Intensive Course, Ethical Reasoning, Research and Information Literacy."
+Monetary and Banking Institutions,CAS EC 341,CAS EC 202,CAS EC 202,,,,"Undergraduate Prerequisites: (CASEC202) - Survey of commercial and central banking institutions. Examination of macro relations between financial organizations and principal objectives of stabilization policy. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry I, Critical Thinking."
+Monetary and Banking Theory,CAS EC 342,CAS EC 341,CAS EC 341,,,,"Undergraduate Prerequisites: (CASEC341) or consent of instructor. - After a brief survey of the development of modern monetary theory, concentration on selected theoretical aspects of monetary economics and financial organization covered in CAS EC 341. Additional emphasis on capital theory and macroeconomic models. Research paper required. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Social Inquiry II, Research and Information Literacy."
+Dynamic Macroeconomics,CAS EC 348,CAS EC 202,CAS EC 202,,,,"Undergraduate Prerequisites: (CASEC202) - Studies macroeconomics as a process evolving over time with applications to the dynamics of growth, recessions, fiscal policy, inflation, international trade and banking."
+Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate Prerequisites: (CASEC201) - Application of current theories of labor supply and demand, wages, education and experience, immigration, labor efficiency, discrimination, and unemployment. Appraisal of the effects of government policies on labor markets. Effective Fall 2020, this course fulfills a single unit in each of the following BU Hub areas: Quantitative Reasoning II, Social Inquiry II."`;
+        
+        const parsed = Papa.parse(csvString.trim(), {
+        header: false,
+        skipEmptyLines: true,
+        });
+
+        csvArray = parsed.data;
+
+        // csvArray = csvString.split('\n').map(line => line.split(','));
         hiddenCodes = [];
         console.log(csvArray);
+
+        function showDescBox(title, desc) {
+            document.getElementById("descBoxCode").textContent = title;
+            document.getElementById("descBoxDesc").textContent = desc;
+            document.getElementById("descBox").classList.add('pop');
+            document.getElementById("descBox").style.display = "block";
+            
+            document.getElementById("overlay").style.display = "block";
+        }
+
+        function hideDescBox() {
+            const descBox = document.getElementById("descBox")
+            descBox.classList.add('popOut');
+
+            descBox.addEventListener('animationend', () => {
+                descBox.style.display = "none";
+                descBox.classList.remove('popOut');
+                document.getElementById("overlay").style.display = "none";
+            }, { once: true });
+        }
 
         function addPrerequisite(){
             let college = document.getElementById("collegeSelect").value;
@@ -270,8 +366,11 @@ Advanced Laboratory,CAS PY 581,CAS PY 351,,,`;
             // event listener, removes when clicked
 
             li.addEventListener('click', () => {
-                li.remove();
-                generateAvCourses();
+                li.classList.add('popOut');
+                li.addEventListener('animationend', () => {
+                    li.remove();
+                    generateAvCourses();
+                }, { once: true });
             });
 
             courseList.appendChild(li);
@@ -284,7 +383,7 @@ Advanced Laboratory,CAS PY 581,CAS PY 351,,,`;
 
             for (let i = 1; i < csvArray.length; i++) {
                 let hasPrereqs = true; 
-                const prereqCols = [2, 3, 4]; // columns in csvArray
+                const prereqCols = [2, 3, 4, 5, 6]; // columns in csvArray
 
                 const coursesTaken = Array.from(document.querySelectorAll("#courseList li"))
                     .map(li => li.textContent.split(":")[0].trim()); // ["CAS MA 123", ...]
@@ -296,8 +395,8 @@ Advanced Laboratory,CAS PY 581,CAS PY 351,,,`;
 
                 if (hiddenCodes.includes(csvArray[i][1])){
                     hasPrereqs = false;
-                    continue;
                 }
+
                 for (let col of prereqCols) {
                     let prereqStr = csvArray[i][col]; // what are the prerequisites for this course? 
                     if (!prereqStr || prereqStr.trim() === '') continue; // check if empty
@@ -329,7 +428,20 @@ Advanced Laboratory,CAS PY 581,CAS PY 351,,,`;
                     deleteBtn.addEventListener('click', () => {
                         hiddenCodes.push((new_li.textContent).substring(0, 10));
                         console.log(hiddenCodes);
-                        new_li.remove();
+                        new_li.classList.add('popOut');
+                        new_li.addEventListener('animationend', () => {
+                            new_li.remove();
+                        }, { once: true });
+                    })
+
+                    span.addEventListener('click', () => {
+                        span.style.cursor = 'pointer';
+                        // this unreadable section of code essentially finds the description of the course contained in span's textfield
+                        courseCode = (span.textContent).substring(0, 10);
+                        description = csvArray.find(course => course[1] === courseCode)[7];
+
+                        showDescBox(courseCode, description);
+                        // alert(description);
                     })
                     new_li.appendChild(span);
                     new_li.appendChild(deleteBtn);
