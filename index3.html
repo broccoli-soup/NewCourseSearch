@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        body{
+            height: 100vh;
+            display: flex;
+        }
+        .pop {
+            animation: popIn 0.4s ease;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        ul{
+            list-style: none;
+            padding: 5px;
+            overflow-y: auto;
+        }
+        li {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 6px 0;
+            width: 100%;
+            box-sizing: border-box;
+            border-radius: 6px;
+            box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.1);
+
+            display: flex;                /* make contents horizontal */
+            justify-content: space-between; /* space between text and button */
+            align-items: center;         /* center items vertically */
+        }
+        .button {
+            margin-left: 10px;
+            margin-top: 10px;
+            padding: 15px;
+            background-color: #c00000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        #gameBox {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            font-family: Arial;
+            padding: 5vh;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            height: 90vh;
+            min-height: auto;
+            width: 30vw;
+        }
+        #dropdownSelect input{
+            padding: 10px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        #dropdownSelect select{
+            margin: 5px;
+            padding: 10px;
+        }
+        #infoBox{
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            flex-direction: column;
+            text-align: center;
+            font-family: Arial;
+            padding: 5vh 5vw;
+            margin-left: 1vw;
+            border-radius: 12px;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            height: 90vh;
+            min-height: auto;
+            flex: 1;
+        }
+        .delete-btn {
+            background-color: #c00000; /* red */
+            color: white;
+            margin-left: 10px;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s ease;
+        }
+        .delete-btn:hover {
+            background-color: #a00000; /* darker red on hover */
+        }
+    </style>
+</head>
+<body>
+    <div id="gameBox">
+        <h2>Prerequisite Search Tool</h2>
+        <p>Developed by Shaun Ng for BUA Computer Science Club</p>
+        <div id="dropdownSelect">
+            <select id="collegeSelect">
+                <option value="" disabled selected>Select Subject</option>
+                <option value="CAS MA">CAS MA - Mathematics and Statistics</option>
+                <option value="CAS PY">CAS PY – Physics</option>
+                <option value="CAS EC">CAS EC – Economics</option>
+            </select>
+            <input id="courseCode" type = "number" min = "101" max = "999" placeholder = "Course code">
+        </div>
+        <button class = "button" onclick = "addPrerequisite()">Add Prerequisite</button>
+        <!-- <button onclick="checkGuess()">Submit</button> !-->
+        <div id="messageBox"></div>
+        <ul id="courseList">
+        </ul>
+    </div>
+    <div id = "infoBox">
+        <h2>Available Courses</h2>
+        <ul id = "avCourses">
+            <li>Add a prerequisite to start! Make sure to also add courses you "should" have credit for – e.g. if you have taken Multivariate Calculus at BUA, input CAS MA 225</li>
+        </ul>
+    </div>
+    
+    <!-- for (let i = 0; i < csvArray.length; i++){
+        let unpackedArray = csvArray[i][1].split("OR");
+        unpackedArray = unpackedArray.map(part => part.trim());
+        console.log(unpackedArray);
+    } FOR LATER USE --> 
+
+    <script>
+        
+        csvString = `Class Name,Course Code,Prerequisite 1,Prerequisite 2,Prerequisite 3,Notes
+Mathematical Reasoning in the Elementary Grades: Number Systems,CAS MA 107,,,,
+"Mathematical Reasoning in the Elementary Grades: Algebra, Geometry, and Statistics",CAS MA 108,CAS MA 107 OR SED ME503,,,
+Mathematical Explorations,CAS MA 111,,,,
+Elementary Statistics,CAS MA 113,,,,
+Statistics 1,CAS MA 115,,,,
+Statistics 2,CAS MA 116,CAS MA 115,,,
+Applied Mathematics for Personal Finance,CAS MA 119,,,,
+Calculus for the Life and Social Sciences I,CAS MA 121,,,,
+Calculus for the Life and Social Sciences II,CAS MA 122,CAS MA 121 OR CAS MA 123,,,
+Calculus I,CAS MA 123,,,,
+Calculus II,CAS MA 124,CAS MA 121 OR CAS MA 123,,,
+Discrete Mathematics for Engineering,CAS MA 193,,,,
+Basic Statistics and Probability,CAS MA 213,,,,
+Applied Statistics,CAS MA 214,CAS MA 213 OR CAS MA 115 OR CAS MA 113 OR CDSDS 120 OR CASCS 237,,,
+Multivariate Calculus,CAS MA 225,CAS MA 124 OR CAS MA 129,,,
+Differential Equations,CAS MA 226,CAS MA 225 OR CAS MA 230,,,
+Honors-Level Vector Calculus,CAS MA 230,CAS MA 124 OR CAS MA 129,,,
+Honors-Level Differential Equations,CAS MA 231,CAS MA 225 OR CAS MA 230,,,
+Linear Algebra,CAS MA 242,CAS MA 121 OR CAS MA 123 OR CAS MA 129,,,
+Discrete Mathematics,CAS MA 293,,,,
+Applied Abstract Algebra,CAS MA 294,CAS MA 293,,,
+Writing in Mathematics,CAS MA 301,WR120,,,
+Introduction to Number Theory,CAS MA 341,CAS MA 242,,,
+Senior Independent Work (I),CAS MA 401,Approval,,,
+Senior Independent Work (II),CAS MA 402,Approval,,,
+Advanced Calculus,CAS MA 411,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,
+Complex Variables,CAS MA 412,CAS MA 225 OR CAS MA 230,,,
+Data Science in R,CAS MA 415,CASCS 111 OR CDSDS 110 OR ENGEK 125  ,CAS MA 113 OR CAS MA 115 OR CAS MA 116 OR CAS MA 213 OR CAS MA 214 OR CAS MA 582,,
+Analysis of Variance,CAS MA 416,CAS MA 116 OR CAS MA 214,,,
+Graph Theory,CAS MA 433,CAS MA 242 AND CAS MA 293,,,
+Honors Level Linear Algebra,CAS MA 442,CAS MA 121 OR CAS MA 123 OR CAS MA 129,,,
+Directed Study,CAS MA 491,Consent of Instructor,Application,,
+Directed Study,CAS MA 492,Application,,,
+History of Mathematics,CAS MA 505,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,
+Introduction to Analysis I,CAS MA 511,CAS MA 225 OR CAS MA 230,,,
+Introduction to Analysis II,CAS MA 512,CAS MA 511,,,
+Mathematical Logic,CAS MA 531,CAS MA 293,,,
+Foundations of Mathematics,CAS MA 532,CAS MA 531,,,
+Methods of Scientific Computing,CAS MA 539,CAS MA 225 OR CAS MA 230,CAS MA 242 OR CAS MA 442,,
+Modern Algebra I,CAS MA 541,CAS MA 242 OR CAS MA 442,,,
+Modern Algebra II,CAS MA 542,CAS MA 541,,,
+Numerical Analysis I,CAS MA 555,CAS MA 225 OR CAS MA 230,,,
+Numerical Analysis II,CAS MA 556,CAS MA 555,CAS MA 242 OR CAS MA 442,,
+Methods of Applied Mathematics 1,CAS MA 561,CAS MA 226 OR CAS MA 230,CAS MA 226 OR CAS MA 231,,
+Methods of Applied Mathematics 2,CAS MA 562,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,
+Introduction to Differential Geometry,CAS MA 563,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,
+Introduction to Topology,CAS MA 564,CAS MA 225 OR CAS MA 230,CAS MA 411 OR CAS MA 511,,
+Mathematical Models in Life Sciences,CAS MA 565,CAS MA 226 OR CAS MA 231,,,
+Statistical Analysis of Point Process Data,CAS MA 568,CAS MA 213,CAS MA 214,,
+Optimization Methods of Operations Research,CAS MA 569,CAS MA 225 OR CAS MA 230 OR CDSDS 122,CAS MA 242 OR CAS MA 442 OR ENGEK 103 OR CDSCS 132,,
+Stochastic Methods of Operations Research,CAS MA 570,CAS MA 225 OR CAS MA 230 OR CDSDS 122,CAS MA 242 OR CAS MA 442 OR ENGEK 103 OR CASCS 132,,
+Qualitative Theory of Ordinary Differential Equations,CAS MA 573,CAS MA 225 OR CAS MA 230,CAS MA 226 OR CAS MA 231,CAS MA 242 OR CAS MA 442,
+Linear Models,CAS MA 575,CAS MA 214 OR CAS MA 116,CAS MA 581 OR ENGEK 381 OR ENGEK 500 OR CASCS 237,CAS MA 242 OR ENGEK 103 OR CDSDS 121 OR CAS MA 442 OR CASCS 132,
+Generalized Linear Models,CAS MA 576,CAS MA 575,,,
+Mathematics of Financial Derivatives,CAS MA 577,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
+Bayesian Statistics,CAS MA 578,CAS MA 575,,,
+Numerical Methods for Biological Sciences,CAS MA 579,CAS MA 226 OR CAS MA 231,,,Elementary knowledge of linear algebra
+Probability,CAS MA 581,CAS MA 225 OR CAS MA 230 OR CDSDS 122,,,
+Mathematical Statistics,CAS MA 582,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
+Introduction to Stochastic Processes,CAS MA 583,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
+Time Series and Forecasting,CAS MA 585,CAS MA 581 OR ENGEK 381 OR ENGEK 500,,,
+Stochastic Methods for Algorithms,CAS MA 586,CAS WR120,CASCS 111 OR CDSDS 110 OR ENGEK 125,CAS MA 225 OR CASCS 235 OR CDSDS 122,
+Nonparametric Statistics,CAS MA 588,CAS MA 582,,,
+Computational Statistics,CAS MA 589,CAS MA 575,,,
+Introduction to Causal Inference,CAS MA 592,CAS MA 575,,,
+Physics of Health Sciences,CAS PY 104,,,,
+Physics 1,CAS PY 105,,,,
+Physics 2,CAS PY 106,CAS PY 105,,,
+Physics of Food and Cooking,CAS PY 107,,,,
+General Physics 1,CAS PY 211,CAS MA 123 OR CAS MA 127,CAS MA 124 OR CAS MA 127,,
+General Physics 2,CAS PY 212,CAS PY 211,CAS MA 124,,
+The Physics in Music,CAS PY 231,,,,
+Principles of Physics 1,CAS PY 251,CAS MA 123,,,
+Principles of Physics 2,CAS PY 252,CAS PY 251,,,
+Waves and Modern Physics,CAS PY 313,CAS PY 211,CAS PY 212,CAS MA 124,
+Modern Physics 1,CAS PY 351,CAS PY 251 OR CAS PY 211,CAS PY 252 OR CAS PY 212,CAS MA 124,
+Methods of Theoretical Physics,CAS PY 355,CAS PY 251 OR CAS PY 212,CAS PY 252 OR CAS PY 212,CAS MA 225,
+Electronics for Scientists,CAS PY 371,CAS MA 124,CAS PY 212 OR CAS PY 252,,
+Electromagnetic Fields and Waves I,CAS PY 405,CAS PY 355,,,
+Electromagnetic Fields and Waves II,CAS PY 406,CAS PY 405,,,
+Intermediate Mechanics,CAS PY 408,CAS PY 355,,,
+Statistical Thermodynamics,CAS PY 410,CAS PY 355,CAS PY 313 OR CAS PY 351,,
+Introduction to Computational Physics,CAS PY 421,CAS PY 351,,,
+Quantum Physics I,CAS PY 451,CAS PY 313 OR CAS PY 351,CAS PY 355,,
+Quantum Physics II,CAS PY 452,CAS PY 451,,,
+Mathematical Physics,CAS PY 501,CAS MA 226,CAS PY 355,,
+Computational Physics (Graduate),CAS PY 502,Consent of Instructor,,,
+Quantum Mechanics I (Graduate),CAS PY 511,CAS PY 451,CAS PY 452,,
+Quantum Mechanics II (Graduate),CAS PY 512,CAS PY 511,,,
+Electromagnetic Theory I,CAS PY 521,CAS PY 405,,,
+Quantum Computing,CAS PY 536,CAS CS 330 OR CAS PY 354,,,
+Interdisciplinary Methods for Quantitative Finance,CAS PY 538,CAS PY 355 OR MET AD 685,,,
+Statistical Mechanics I,CAS PY 541,CAS PY 410,,,
+Introduction to Solid State Physics,CAS PY 543,CAS PY 406 ,CAS PY 410,CAS PY 451,
+Introduction to Particle Physics,CAS PY 551,CAS PY 451 ,CAS PY 452,,
+Cosmological Physics,CAS PY 555,CAS PY 406 ,CAS PY 408,,
+Dynamics of Nonlinear Systems,CAS PY 565,Consent of Instructor,,,
+Introduction to Biological Physics,CAS PY 571,CAS PY 410 OR CAS CH 352,,,
+Advanced Laboratory,CAS PY 581,CAS PY 351,,,`;
+        csvArray = csvString.split('\n').map(line => line.split(','));
+        hiddenCodes = [];
+        console.log(csvArray);
+
+        function addPrerequisite(){
+            let college = document.getElementById("collegeSelect").value;
+            let courseCode = document.getElementById("courseCode").value;
+            let joinedCode = college + " " + courseCode;
+            index = false;
+            for (let i = 0; i < csvArray.length; i++){
+                let unpackedArray = csvArray[i][1]
+                if (joinedCode == unpackedArray){
+                    index = i;
+                }
+            }
+            if (index == false){
+                alert('Course not found!')
+                return;
+            }
+            let toAdd = joinedCode + ": " + csvArray[index][0];
+            const courseList = document.getElementById("courseList");
+            const li = document.createElement('li');
+            li.classList.add('pop'); // essentially, makes li into a .pop class
+            li.textContent = toAdd;
+
+            li.style.cursor = 'pointer'; // even when hovering, its a cursor
+            // event listener, removes when clicked
+
+            li.addEventListener('click', () => {
+                li.remove();
+                generateAvCourses();
+            });
+
+            courseList.appendChild(li);
+            generateAvCourses();
+        }
+        
+        function generateAvCourses(){
+            const avCourseList = document.getElementById("avCourses");
+            avCourseList.innerHTML = '';
+
+            for (let i = 1; i < csvArray.length; i++) {
+                let hasPrereqs = true; 
+                const prereqCols = [2, 3, 4]; // columns in csvArray
+
+                const coursesTaken = Array.from(document.querySelectorAll("#courseList li"))
+                    .map(li => li.textContent.split(":")[0].trim()); // ["CAS MA 123", ...]
+
+                if (coursesTaken.includes(csvArray[i][1])){
+                    hasPrereqs = false;
+                    continue;
+                }
+
+                if (hiddenCodes.includes(csvArray[i][1])){
+                    hasPrereqs = false;
+                    continue;
+                }
+                for (let col of prereqCols) {
+                    let prereqStr = csvArray[i][col]; // what are the prerequisites for this course? 
+                    if (!prereqStr || prereqStr.trim() === '') continue; // check if empty
+
+                    // Split by OR and trim each option
+                    let options = prereqStr.split("OR").map(p => p.trim());
+
+                    // Check if at least one option is satisfied
+                    let satisfied = options.some(opt => coursesTaken.includes(opt));
+
+                    if (!satisfied) {
+                        hasPrereqs = false;
+                        break; // If one prereq column fails, skip this course
+                    }
+                }
+
+                if (hasPrereqs){
+                    const new_li = document.createElement('li');
+                    new_li.classList.add('pop'); // add pop effect
+                    
+                    let toAdd = csvArray[i][1] + ": " + csvArray[i][0];
+                    const span = document.createElement('span');
+                    span.textContent = toAdd;
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.textContent = 'X';
+                    deleteBtn.classList.add('delete-btn');
+
+                    deleteBtn.addEventListener('click', () => {
+                        hiddenCodes.push((new_li.textContent).substring(0, 10));
+                        console.log(hiddenCodes);
+                        new_li.remove();
+                    })
+                    new_li.appendChild(span);
+                    new_li.appendChild(deleteBtn);
+                    avCourseList.appendChild(new_li);
+                }
+            }
+        }
+        
+
+        const listItems = document.querySelectorAll('#courseList li');
+
+        listItems.forEach(item => {
+            item.style.cursor = 'pointer'; // even when hovering, its a cursor
+            item.addEventListener('click', () => {
+            item.remove();
+            });
+        });
+    </script>
+</body>
+</html>
