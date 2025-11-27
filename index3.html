@@ -81,7 +81,7 @@
             -webkit-appearance: none;
             margin: 0;
         }
-        #dropdownSelect select{
+        select{
             margin: 5px;
             padding: 10px;
         }
@@ -169,7 +169,15 @@
         </ul>
     </div>
     <div id = "infoBox">
-        <h2>Available Courses</h2>
+        <span>
+            <h2>Available Courses</h2>
+            <select id="collegeSelect2" onchange = "generateAvCourses()">
+                <option value="Any">in Any School</option>
+                <option value="CAS MA">in CAS MA - Mathematics and Statistics</option>
+                <option value="CAS PY">in CAS PY – Physics</option>
+                <option value="CAS EC">in CAS EC – Economics</option>
+            </select>
+        </span>
         <ul id = "avCourses">
             <li>Add a prerequisite to start! Make sure to also add courses you "should" have credit for – e.g. if you have taken Multivariate Calculus at BUA, input CAS MA 225</li>
         </ul>
@@ -397,6 +405,13 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
                     hasPrereqs = false;
                 }
 
+                const collegeOfChoice = document.getElementById("collegeSelect2")
+                if (!(collegeOfChoice.value == "Any")){
+                    if (!(collegeOfChoice.value == csvArray[i][1].substring(0, 6))){
+                        hasPrereqs = false;
+                    }
+                }
+
                 for (let col of prereqCols) {
                     let prereqStr = csvArray[i][col]; // what are the prerequisites for this course? 
                     if (!prereqStr || prereqStr.trim() === '') continue; // check if empty
@@ -422,7 +437,7 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
                     span.textContent = toAdd;
 
                     const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = 'X';
+                    deleteBtn.textContent = 'x';
                     deleteBtn.classList.add('delete-btn');
 
                     deleteBtn.addEventListener('click', () => {
