@@ -32,6 +32,7 @@
             padding: 5px;
             overflow-y: auto;
         }
+        /*list*/
         li {
             background-color: #f0f0f0;
             padding: 10px;
@@ -213,23 +214,11 @@
         <button id = "descEsc" onclick = "hideDescBox()" class = "button">OK</button>
     </div>
     <div id = "equivBox">
-        <table border="1" style="border-collapse: collapse; text-align: center;">
-            <tr>
-              <td>1</td>
-              <td>2</td>
-              <td>3</td>
-            </tr>
-            <tr>
-              <td>4</td>
-              <td>5</td>
-              <td>6</td>
-            </tr>
-            <tr>
-              <td>7</td>
-              <td>8</td>
-              <td>9</td>
-            </tr>
-          </table>
+        <table id="equivTable" border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
+            <tbody>
+                <!-- rows will go here later -->
+            </tbody>
+        </table>
         <button id = "equivEsc" onclick = "hideEquivBox()" class = "button">OK</button>
     </div>
     
@@ -410,7 +399,7 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
                 document.getElementById("overlay").style.display = "none";
             }, { once: true });
         }
-
+        
         function addPrerequisite(){
             let college = document.getElementById("collegeSelect").value;
             let courseCode = document.getElementById("courseCode").value;
@@ -446,7 +435,42 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
             courseList.appendChild(li);
             generateAvCourses();
         }
-        
+
+        // helper function for equivBox to generate course box where you can find description
+        function getBriefBox(name){
+            const course = csvArray.find(row => row[1] === name);
+            const externalDescription = {
+                "AP Chemistry" : "AP Chemistry is an introductory college-level chemistry course. Students cultivate their understanding of chemistry through inquiry-based investigations as they explore topics like atomic and molecular structure, chemical reactions, kinetics, equilibrium, and thermodynamics.",
+                "AP Physics C Mechanics": "Have you ever thought about why you feel the downward pull of Earth but not an upward pull from the Moon? Why throwing a heavy rock forward pushes you backward? Or why the end of a stick swings down faster than a rock that is dropped? In AP Physics C: Mechanics, you’ll explore concepts such as motion, gravitation, momentum, and rotation using conceptual explanations and calculus-based mathematics.",
+                "AP Physics C Electromagnetism": "Have you ever wondered how electricity and electromagnetism are used to power the devices and machines you interact with every day? Explore concepts such as electrostatics, conductors, capacitors and dielectrics, electric circuits, magnetic fields, and electromagnetism in AP Physics C: Electricity and Magnetism. You’ll do hands-on laboratory work and in-class activities to investigate phenomena while using calculus to solve problems.",
+                "BUA Calculus 1": "This course explores the mathematics of motion. It is an introduction to both differential and integral calculus, and their applications. The topics include the usual suspects: limits, computing instantaneous rates of change, optimization and other applications of the derivative, the definite integral, the Fundamental Theorems of Calculus, and basic techniques of anti-differentiation. Students who complete this course will be prepared to take the Advanced Placement Calculus AB exam.",
+                "BUA Calculus 2": "This course begins with a brief review of differential calculus and the basics of definite and indefinite integrals. From there, the course covers improper integrals, applications of definite integrals, sequences and series, ordinary first-order and second-order differential equations, and systems of differential equations. Students who complete this course will be prepared to take the Advanced Placement Calculus BC exam.",
+                "BUA Multivariate Calculus": "This course extends the ideas covered in MA80 and MA90 to functions of two and three variables. After introducing functions of more than one variable, the course covers differentiation and integration of these functions, including optimization; parameterizations and vector fields; line and flux integrals; and calculus of vector fields. ",
+                "if you're reading this you're an icon!!":"six seven"
+            }
+            if (course){
+                let description = course[7];
+            }
+            else { // non-BU courses 
+                let description = externalDescription[name] || "No description available, sorry!"
+                // failsafe, for courses not in the externalLookup table
+            }
+
+            li.classList.add('pop'); // reuse your pop animation
+
+            const span = document.createElement('span');
+            span.textContent = courseName;
+            span.style.cursor = 'pointer';
+
+            span.addEventListener('click', () => {
+                const description = getBriefBox(courseName);
+                showDescBox(courseName, description)
+            });
+
+            li.appendChild(span);
+            return li;
+        }
+
         function generateAvCourses(){
             const avCourseList = document.getElementById("avCourses");
             avCourseList.innerHTML = '';
