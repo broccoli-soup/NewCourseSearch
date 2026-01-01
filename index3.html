@@ -135,6 +135,28 @@
             display: none;
             pointer-events: auto;  /* so users can interact/select text */
         }
+        
+        /* equiv box of course equivalences*/ 
+        #equivBox { 
+            position: fixed; 
+            width: 50vw;
+            height: auto;
+            max-height: 50vh;         
+            top: 25%;               
+            left: 25%;              
+            /*transform: translate(-50%, -50%); */
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 9999; 
+            line-height: 1.5;
+            overflow-y: scroll;      
+            box-sizing: border-box;
+            display: none;
+            pointer-events: auto;  /* so users can interact/select text */
+        }
+
         #overlay {
             position: fixed;
             top: 0;
@@ -162,8 +184,10 @@
             </select>
             <input id="courseCode" type = "number" min = "101" max = "999" placeholder = "Course code">
         </div>
-        <button class = "button" onclick = "addPrerequisite()">Add Prerequisite</button>
-        <!-- <button onclick="checkGuess()">Submit</button> !-->
+        <div id="prereqControls">
+            <button class="button" onclick="addPrerequisite()">Add Prerequisite</button>
+            <button class="button" onclick="showEquivBox()">Reference Course Equivalences</button>
+        </div>
         <div id="messageBox"></div>
         <ul id="courseList">
         </ul>
@@ -187,6 +211,26 @@
         <h2 id = "descBoxCode"></h2>
         <p id = "descBoxDesc"></p>
         <button id = "descEsc" onclick = "hideDescBox()" class = "button">OK</button>
+    </div>
+    <div id = "equivBox">
+        <table border="1" style="border-collapse: collapse; text-align: center;">
+            <tr>
+              <td>1</td>
+              <td>2</td>
+              <td>3</td>
+            </tr>
+            <tr>
+              <td>4</td>
+              <td>5</td>
+              <td>6</td>
+            </tr>
+            <tr>
+              <td>7</td>
+              <td>8</td>
+              <td>9</td>
+            </tr>
+          </table>
+        <button id = "equivEsc" onclick = "hideEquivBox()" class = "button">OK</button>
     </div>
     
     <!-- for (let i = 0; i < csvArray.length; i++){
@@ -339,6 +383,12 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
             document.getElementById("overlay").style.display = "block";
         }
 
+        function showEquivBox(){
+            document.getElementById("equivBox").classList.add('pop');
+            document.getElementById("equivBox").style.display = "block";
+            document.getElementById("overlay").style.display = "block";
+        }
+
         function hideDescBox() {
             const descBox = document.getElementById("descBox")
             descBox.classList.add('popOut');
@@ -346,6 +396,17 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
             descBox.addEventListener('animationend', () => {
                 descBox.style.display = "none";
                 descBox.classList.remove('popOut');
+                document.getElementById("overlay").style.display = "none";
+            }, { once: true });
+        }
+
+        function hideEquivBox(){
+            const equivBox = document.getElementById("equivBox")
+            equivBox.classList.add('popOut');
+
+            equivBox.addEventListener('animationend', () => {
+                equivBox.style.display = "none";
+                equivBox.classList.remove('popOut');
                 document.getElementById("overlay").style.display = "none";
             }, { once: true });
         }
@@ -394,18 +455,22 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
                 let hasPrereqs = true; 
                 const prereqCols = [2, 3, 4, 5, 6]; // columns in csvArray
 
+                // get courses the user has already taken in an array format
                 const coursesTaken = Array.from(document.querySelectorAll("#courseList li"))
                     .map(li => li.textContent.split(":")[0].trim()); // ["CAS MA 123", ...]
 
+                // if you've already taken the course, skip
                 if (coursesTaken.includes(csvArray[i][1])){
                     hasPrereqs = false;
                     continue;
                 }
 
+                // user clicked list...
                 if (hiddenCodes.includes(csvArray[i][1])){
                     hasPrereqs = false;
                 }
 
+                // college select 
                 const collegeOfChoice = document.getElementById("collegeSelect2")
                 if (!(collegeOfChoice.value == "Any")){
                     if (!(collegeOfChoice.value == csvArray[i][1].substring(0, 6))){
@@ -413,6 +478,7 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
                     }
                 }
 
+                // check for prerequisites 
                 for (let col of prereqCols) {
                     let prereqStr = csvArray[i][col]; // what are the prerequisites for this course? 
                     if (!prereqStr || prereqStr.trim() === '') continue; // check if empty
