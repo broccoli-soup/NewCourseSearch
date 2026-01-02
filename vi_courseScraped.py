@@ -23,6 +23,9 @@ def extractPrerequisites(description):
         plainText = plainText.replace("ORCONSENTOFTHEINSTRUCTOR", "")
         plainText = plainText.replace("ORCONSENTOFINSTRUCTOR", "")
         plainText = plainText.replace("ORPERMISSIONOFINSTRUCTOR", "")
+        plainText = plainText.replace("SENIORSTANDING", "SPECIAL")
+        plainText = plainText.replace("JUNIORSTANDING", "SPECIAL")
+        plainText = plainText.replace("SOPHOMORESTANDING", "SPECIAL")
         plainText = plainText.replace("OREQUIVALENT", "")
         parts = re.split(r'\s*(?:AND|&|;)\s*', plainText, flags=re.IGNORECASE)
         parts = [p.strip() for p in parts]
@@ -75,17 +78,16 @@ def courseData(courseCode, url):
     return(course)
 
 courseList = [] #to be made into df and thus into an array
-fastList = [100, 101, 102, 105, 107, 109, 202, 203, 311, 312, 401, 402, 413, 414, 441, 491, 492]
-for courseNum in fastList:
-    url = f"https://www.bu.edu/academics/cas/courses/cas-as-{courseNum}/"
-    courseCode = 'CAS AS ' + str(courseNum)
+for courseNum in range(300, 993):
+    url = f"https://www.bu.edu/academics/cas/courses/eng-ec-{courseNum}/"
+    courseCode = 'ENG EC ' + str(courseNum)
     courseInfo = courseData(courseCode, url)
     if not courseInfo == False:
         courseList.append(courseInfo)
         print(courseInfo['Course Code'], courseInfo['Title'], 'Prerequisite 1', courseInfo['Prerequisite 1'])
 
 df = pd.DataFrame(courseList)
-df.to_csv('bu_astronomy_courses.csv', index = False)
+df.to_csv('bu_eng_ec_courses.csv', index = False)
 
 # for courseCode in range(100, 1000):
 #     url = f"https://www.bu.edu/academics/cas/courses/cas-ma-{courseCode}/"
