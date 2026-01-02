@@ -36,5 +36,5 @@ def grab_rmp_data(professor_name):
     return data
 
 # Example usage:
-prof_info = grab_rmp_data("Christine Papadakis")
+prof_info = grab_rmp_data("Manher Jariwala")
 print(prof_info)
