@@ -3,28 +3,46 @@ import time
 import re
 from bs4 import BeautifulSoup
 start_time = time.time()
+import pandas as pd
 # Course to scrape
 
 
 def extractPrerequisites(description):
-    match = re.search(r"Undergraduate Prerequisites:\s*(.+?)(?:[.\-;]|$)", description, flags=re.IGNORECASE)
+    match = re.search(
+        r"Undergraduate Prerequisites:\s*(.+?)(?=(?:\.|\-|Undergraduate Corequisites|$))",
+        description,
+        flags=re.IGNORECASE | re.DOTALL
+    )
+    #match = re.search(r"Undergraduate Prerequisites:\s*(.+?)(?:[.\-]|$)", description, flags=re.IGNORECASE)
     if match:
         plainText = match.group(1).strip()
         plainText = plainText.replace("Undergraduate Prerequisites:", "").strip() #strip 'Undergraduate Prerequisites'
         plainText = plainText.upper()
         plainText = re.sub(r"[ \t\n().]", "", plainText)
         plainText = plainText.replace("ORCONSENTOFINSTRUCTOR", "")
-        parts = re.split(r'\s*(?:AND|&)\s*', plainText, flags=re.IGNORECASE)
+        plainText = plainText.replace("ORCONSENTOFTHEINSTRUCTOR", "")
+        plainText = plainText.replace("ORCONSENTOFINSTRUCTOR", "")
+        plainText = plainText.replace("ORPERMISSIONOFINSTRUCTOR", "")
+        plainText = plainText.replace("OREQUIVALENT", "")
+        parts = re.split(r'\s*(?:AND|&|;)\s*', plainText, flags=re.IGNORECASE)
         parts = [p.strip() for p in parts]
         parts = [re.sub(r'OR', ' OR ', p) for p in parts]
         # include all schools!
         parts = [re.sub(r'CAS([A-Z]{2})(\d{3})', r'CAS \1 \2', p) for p in parts]
-        parts = [re.sub(r'ENG([A-Z]{2})(\d{3})', r'CAS \1 \2', p) for p in parts]
-        parts = [re.sub(r'CDS([A-Z]{2})(\d{3})', r'CAS \1 \2', p) for p in parts]
+        parts = [re.sub(r'ENG([A-Z]{2})(\d{3})', r'ENG \1 \2', p) for p in parts]
+        parts = [re.sub(r'CDS([A-Z]{2})(\d{3})', r'CDS \1 \2', p) for p in parts]
         return(parts)
     return('No prerequisites found')
 
-def courseData(url):
+def safeGet(list, index):
+    if list == 'No prerequisites found':
+        return("")
+    if index < len(list):
+        return(list[index])
+    else:
+        return("")
+    
+def courseData(courseCode, url):
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -42,20 +60,32 @@ def courseData(url):
     descriptionParas = [p.text.strip() for p in p_tags if "Boston University" not in p.text]
     descriptionText = " ".join(descriptionParas)
     
+    prerequisites = extractPrerequisites(descriptionText)
     course = {
         'Title': title,
+        'Course Code': courseCode,
+        'Prerequisite 1': safeGet(prerequisites, 0), # you could probably make this more efficient by looping through and setting dict to that value... but we're not THAT strapped for time
+        'Prerequisite 2': safeGet(prerequisites, 1),
+        'Prerequisite 3': safeGet(prerequisites, 2),
+        'Prerequisite 4': safeGet(prerequisites, 3),
+        'Prerequisite 5': safeGet(prerequisites, 4),
         'Description': descriptionText,
-        'Prerequisites': extractPrerequisites(descriptionText)
+        #'Prerequisites': prerequisites # TEMPORARY FOR PRINTING CONVENIENCE
     }
-
     return(course)
 
-fastList = [214, 225, 226, 230, 231, 242, 294, 301, 341, 401, 402, 411, 412, 415, 416, 433, 442, 491, 492, 505, 511, 512, 531, 532, 539, 541, 542, 555, 556, 561, 562, 563, 564, 565, 568, 569, 570, 571, 573, 575, 576, 577, 578, 579, 581, 581, 582, 583, 584, 585, 586, 588, 589, 592]
-for courseCode in fastList:
-    url = f"https://www.bu.edu/academics/cas/courses/cas-ma-{courseCode}/"
-    courseInfo = courseData(url)
+courseList = [] #to be made into df and thus into an array
+fastList = [100, 101, 102, 105, 107, 109, 202, 203, 311, 312, 401, 402, 413, 414, 441, 491, 492]
+for courseNum in fastList:
+    url = f"https://www.bu.edu/academics/cas/courses/cas-as-{courseNum}/"
+    courseCode = 'CAS AS ' + str(courseNum)
+    courseInfo = courseData(courseCode, url)
     if not courseInfo == False:
-        print('CAS MA', str(courseCode), courseInfo['Title'], 'Prerequisites:', courseInfo['Prerequisites'])
+        courseList.append(courseInfo)
+        print(courseInfo['Course Code'], courseInfo['Title'], 'Prerequisite 1', courseInfo['Prerequisite 1'])
+
+df = pd.DataFrame(courseList)
+df.to_csv('bu_astronomy_courses.csv', index = False)
 
 # for courseCode in range(100, 1000):
 #     url = f"https://www.bu.edu/academics/cas/courses/cas-ma-{courseCode}/"

@@ -1,40 +1,89 @@
 from datetime import datetime
 import requests
-import base64
+from bs4 import BeautifulSoup
 
-def grab_rmp_data(professor_name):
-    """
-    Fetch RateMyProfessors rating and difficulty for a given professor.
-    Returns a dict: {"rating": float, "difficulty": float, "url": str}
-    """
-    bu_school_id = 124  # BU's RMP school ID
-    # Encode the URL correctly
-    prof_query = professor_name.replace(" ", "%20")
-    school_encoded = base64.b64encode(f"School-{bu_school_id}".encode('ascii')).decode('ascii')
+def findProfessorRMP(prof_name, school_id=124):
+    query = prof_name.replace(" ", "+")
+    url = f"https://www.ratemyprofessors.com/search/professors/?q={query}&sid={school_id}"
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    # Find the FIRST teacher card link
+    teacher_link = soup.find("a", href=True, string=False)
+
+    # Better: explicitly match professor URLs
+    teacher_link = soup.find("a", href=lambda x: x and x.startswith("/professor/"))
+
+    if not teacher_link:
+        return None
+
+    prof_url = "https://www.ratemyprofessors.com" + teacher_link["href"]
+    return prof_url
+
+def rating(url):
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    rating_div = soup.find(
+        "div",
+        class_="RatingValue__Numerator-qw8sqy-2 duhvlP"
+    )
+
+    if rating_div:
+        try:
+            return float(rating_div.text.strip())
+        except ValueError:
+            return -1
+    else:
+        return -1
     
-    url = f"https://www.ratemyprofessors.com/search/teachers?query={prof_query}&sid={school_encoded}"
+print(rating(findProfessorRMP("bunch")))
+# # Example usage:
+# prof_info = grab_rmp_data("Manher Jariwala")
+# print(prof_info)
     
-    response = requests.get(url).text
-    data = {"rating": -1, "difficulty": -1, "url": url}
+# MODIFIED VERSION OF BU V2 UNDERGRAD CODE 
+# def rmpData(url):
+#     """
+#     Parse RateMyProfessors page HTML for rating & difficulty.
+#     Expects a URL that contains avgRating / avgDifficulty in the HTML.
+#     """
+#     response = requests.get(url).text
 
-    # Parse rating
-    if '"avgRating":' in response:
-        i = response.index('"avgRating":')
-        ss = response[i+12:i+15]
-        if "," in ss:
-            ss = ss[0:1]
-        data["rating"] = float(ss)
+#     data = {
+#         "rating": -1,
+#         "difficulty": -1,
+#         "url": url
+#     }
 
-    # Parse difficulty
-    if '"avgDifficulty":' in response:
-        i = response.index('"avgDifficulty":')
-        ss = response[i+16:i+19]
-        if "," in ss:
-            ss = ss[0:1]
-        data["difficulty"] = float(ss)
-    
-    return data
+#     # Parse rating
+#     if '"avgRating":' in response:
+#         i = response.index('"avgRating":')
+#         ss = response[i + 12 : i + 16]  # slightly safer slice
+#         ss = ss.split(",")[0]
+#         try:
+#             data["rating"] = float(ss)
+#         except:
+#             pass
 
-# Example usage:
-prof_info = grab_rmp_data("Manher Jariwala")
-print(prof_info)
+#     # Parse difficulty
+#     if '"avgDifficulty":' in response:
+#         i = response.index('"avgDifficulty":')
+#         ss = response[i + 16 : i + 20]
+#         ss = ss.split(",")[0]
+#         try:
+#             data["difficulty"] = float(ss)
+#         except:
+#             pass
+
+#     return data
+
