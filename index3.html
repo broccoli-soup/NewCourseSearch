@@ -116,7 +116,26 @@
         .delete-btn:hover {
             background-color: #a00000; /* darker red on hover */
         }
+        .basicCourseButton {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 3%;
+            width: 94%;
+            box-sizing: border-box;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
 
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            font-family: inherit;
+            font-size: 14px;
+        }
+        .basicCourseButton:hover {
+            background-color: #e0e0e0;
+        }
         #descBox { 
             position: fixed; 
             width: 50vw;
@@ -140,17 +159,17 @@
         /* equiv box of course equivalences*/ 
         #equivBox { 
             position: fixed; 
-            width: 50vw;
+            width: 60vw;
             height: auto;
-            max-height: 50vh;         
-            top: 25%;               
-            left: 25%;              
-            /*transform: translate(-50%, -50%); */
+            max-height: 90vh;    
+            top: 5vw;               
+            left: 20vh;              
+            /*transform: translate(-50%, -50%);*/
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-            z-index: 9999; 
+            z-index: 9997; 
             line-height: 1.5;
             overflow-y: scroll;      
             box-sizing: border-box;
@@ -158,6 +177,15 @@
             pointer-events: auto;  /* so users can interact/select text */
         }
 
+        #equivEsc {
+            position: absolute;
+            top: 10px;    /* distance from top of box */
+            right: 10px;  /* distance from right of box */
+            border: none;
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+        }
         #overlay {
             position: fixed;
             top: 0;
@@ -169,10 +197,21 @@
             display: none; /* hidden by default */
             pointer-events: auto; /* important: block interactions */
         }
+        #overlayForEquiv {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.4); /* dimmed background, change alpha for darkness */
+            z-index: 9996; /* just below #descBox */
+            display: none; /* hidden by default */
+            pointer-events: auto; /* important: block interactions */
+        }
     </style>
 </head>
 <body>
-    <div id="overlay"></div>
+    <div id="overlayForEquiv"></div>
     <div id="gameBox">
         <h2>Prerequisite Search Tool</h2>
         <p>Developed by Shaun Ng for BUA Computer Science Club</p>
@@ -182,6 +221,7 @@
                 <option value="CAS MA">CAS MA - Mathematics and Statistics</option>
                 <option value="CAS PY">CAS PY – Physics</option>
                 <option value="CAS EC">CAS EC – Economics</option>
+                <option value="ENG ME">ENG ME – Mechanical Engineering</option>
             </select>
             <input id="courseCode" type = "number" min = "101" max = "999" placeholder = "Course code">
         </div>
@@ -205,23 +245,155 @@
             </select>
         </span>
         <ul id = "avCourses">
-            <li>Add a prerequisite to start! Make sure to also add courses you "should" have credit for – e.g. if you have taken Multivariate Calculus at BUA, input CAS MA 225</li>
+            <li>Add a prerequisite to start! Make sure to also add courses you "should" have credit for – e.g. if you have taken Multivariate Calculus at BUA, input CAS MA 225. See the 'reference course equivalences' menu!</li>
         </ul>
     </div>
+    
+    <div id = "equivBox">
+        <h2>Course Equivalences</h2>
+        <button id = "equivEsc" onclick = "hideEquivBox()" class = "button">OK</button>
+        The courses in each row are (roughly) equivalent to one another. For example, if you have taken BUA Calculus 1, it is equivalent to CAS MA 123. You can also click on courses for their descriptions. <b>This is NOT a complete list.</b>
+        <table id="equivTable" border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
+            <tbody>
+                <tr>
+                    <td>
+                        <button onclick="SDB('BUA Calculus 1')" style = "background-color: #e9c86c" class = "basicCourseButton">BUA Calculus 1</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('AP Calculus AB')" style = "background-color: #42b942" class = "basicCourseButton">AP Calculus AB</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 123')" class = "basicCourseButton">CAS MA 123</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 121')" class = "basicCourseButton">CAS MA 121</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('BUA Calculus 2')" style = "background-color: #e9c86c" class = "basicCourseButton">BUA Calculus 2</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('AP Calculus BC')" style = "background-color: #42b942" class = "basicCourseButton">AP Calculus BC</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 124')" class = "basicCourseButton">CAS MA 124</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 122')" class = "basicCourseButton">CAS MA 122</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('BUA Multivariate Calculus')" style = "background-color: #e9c86c" class = "basicCourseButton">BUA Multivariate Calculus</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 225')" class = "basicCourseButton">CAS MA 225</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 230')" class = "basicCourseButton">CAS MA 230</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('AP Chemistry')" style = "background-color: #42b942" class = "basicCourseButton">AP Chemistry</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS CH 131')" class = "basicCourseButton">CAS CH 131</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('AP Physics C Mechanics')" style = "background-color: #42b942" class = "basicCourseButton">AP Physics C Mechanics</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS PY 211')" class = "basicCourseButton">CAS PY 211</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('AP Physics C Electricity and Magnetism')" style = "background-color: #42b942" class = "basicCourseButton">AP Physics C Electricity and Magnetism</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS PY 212')" class = "basicCourseButton">CAS PY 212</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('AP Microeconomics')" style = "background-color: #42b942" class = "basicCourseButton">AP Microeconomics</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS EC 101')" class = "basicCourseButton">CAS EC 101</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('AP Macroeconomics')" style = "background-color: #42b942" class = "basicCourseButton">AP Macroeconomics</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS EC 102')" class = "basicCourseButton">CAS EC 102</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('AP Computer Science A')" style = "background-color: #42b942" class = "basicCourseButton">AP Computer Science A</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS CS 111')" class = "basicCourseButton">CAS CS 111</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('CAS MA 242')" class = "basicCourseButton">CAS MA 242</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS CS 132')" class = "basicCourseButton">CAS CS 132</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('ENG EK 103')" class = "basicCourseButton">ENG EK 103</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('CAS MA 293')" class = "basicCourseButton">CAS MA 293</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS CS 131')" class = "basicCourseButton">CAS CS 131</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS MA 193')" class = "basicCourseButton">CAS CS 193</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('CAS MA 581')" class = "basicCourseButton">CAS MA 581</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('CAS CS 237')" class = "basicCourseButton">CAS CS 237</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('ENG EK 381')" class = "basicCourseButton">ENG EK 381</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button onclick="SDB('CAS CS 330')" class = "basicCourseButton">CAS CS 330</button>
+                    </td>
+                    <td>
+                        <button onclick="SDB('MIT OCW 6.006')" class = "basicCourseButton">MIT OCW 6.006</button>
+                    </td>
+                </tr>
+                <!-- rows will go here later -->
+            </tbody>
+        </table>
+        <small>sorry I literally cannot figure out how to center this menu</small>
+    </div>
+    <div id="overlay"></div> <!-- for desc box-->
     <div id = "descBox">
         <h2 id = "descBoxCode"></h2>
         <p id = "descBoxDesc"></p>
         <button id = "descEsc" onclick = "hideDescBox()" class = "button">OK</button>
     </div>
-    <div id = "equivBox">
-        <table id="equivTable" border="1" style="border-collapse: collapse; width: 100%; text-align: center;">
-            <tbody>
-                <!-- rows will go here later -->
-            </tbody>
-        </table>
-        <button id = "equivEsc" onclick = "hideEquivBox()" class = "button">OK</button>
-    </div>
-    
     <!-- for (let i = 0; i < csvArray.length; i++){
         let unpackedArray = csvArray[i][1].split("OR");
         unpackedArray = unpackedArray.map(part => part.trim());
@@ -372,10 +544,15 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
             document.getElementById("overlay").style.display = "block";
         }
 
+        // really easy helper method lol
+        function SDB(title){
+            showDescBox(title, getDesc(title))
+        }
+
         function showEquivBox(){
             document.getElementById("equivBox").classList.add('pop');
             document.getElementById("equivBox").style.display = "block";
-            document.getElementById("overlay").style.display = "block";
+            document.getElementById("overlayForEquiv").style.display = "block";
         }
 
         function hideDescBox() {
@@ -396,7 +573,7 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
             equivBox.addEventListener('animationend', () => {
                 equivBox.style.display = "none";
                 equivBox.classList.remove('popOut');
-                document.getElementById("overlay").style.display = "none";
+                document.getElementById("overlayForEquiv").style.display = "none";
             }, { once: true });
         }
         
@@ -437,38 +614,25 @@ Economics of the Labor Market,CAS EC 356,CAS EC 201,CAS EC 201,,,,"Undergraduate
         }
 
         // helper function for equivBox to generate course box where you can find description
-        function getBriefBox(name){
+        function getDesc(name){
             const course = csvArray.find(row => row[1] === name);
             const externalDescription = {
                 "AP Chemistry" : "AP Chemistry is an introductory college-level chemistry course. Students cultivate their understanding of chemistry through inquiry-based investigations as they explore topics like atomic and molecular structure, chemical reactions, kinetics, equilibrium, and thermodynamics.",
                 "AP Physics C Mechanics": "Have you ever thought about why you feel the downward pull of Earth but not an upward pull from the Moon? Why throwing a heavy rock forward pushes you backward? Or why the end of a stick swings down faster than a rock that is dropped? In AP Physics C: Mechanics, you’ll explore concepts such as motion, gravitation, momentum, and rotation using conceptual explanations and calculus-based mathematics.",
-                "AP Physics C Electromagnetism": "Have you ever wondered how electricity and electromagnetism are used to power the devices and machines you interact with every day? Explore concepts such as electrostatics, conductors, capacitors and dielectrics, electric circuits, magnetic fields, and electromagnetism in AP Physics C: Electricity and Magnetism. You’ll do hands-on laboratory work and in-class activities to investigate phenomena while using calculus to solve problems.",
+                "AP Physics C Electricity and Magnetism": "Have you ever wondered how electricity and electromagnetism are used to power the devices and machines you interact with every day? Explore concepts such as electrostatics, conductors, capacitors and dielectrics, electric circuits, magnetic fields, and electromagnetism in AP Physics C: Electricity and Magnetism. You’ll do hands-on laboratory work and in-class activities to investigate phenomena while using calculus to solve problems.",
                 "BUA Calculus 1": "This course explores the mathematics of motion. It is an introduction to both differential and integral calculus, and their applications. The topics include the usual suspects: limits, computing instantaneous rates of change, optimization and other applications of the derivative, the definite integral, the Fundamental Theorems of Calculus, and basic techniques of anti-differentiation. Students who complete this course will be prepared to take the Advanced Placement Calculus AB exam.",
                 "BUA Calculus 2": "This course begins with a brief review of differential calculus and the basics of definite and indefinite integrals. From there, the course covers improper integrals, applications of definite integrals, sequences and series, ordinary first-order and second-order differential equations, and systems of differential equations. Students who complete this course will be prepared to take the Advanced Placement Calculus BC exam.",
                 "BUA Multivariate Calculus": "This course extends the ideas covered in MA80 and MA90 to functions of two and three variables. After introducing functions of more than one variable, the course covers differentiation and integration of these functions, including optimization; parameterizations and vector fields; line and flux integrals; and calculus of vector fields. ",
                 "if you're reading this you're an icon!!":"six seven"
             }
             if (course){
-                let description = course[7];
+                return(course[7]);
             }
             else { // non-BU courses 
-                let description = externalDescription[name] || "No description available, sorry!"
+                let description = externalDescription[name] || "No description available, sorry!";
+                return(description);
                 // failsafe, for courses not in the externalLookup table
             }
-
-            li.classList.add('pop'); // reuse your pop animation
-
-            const span = document.createElement('span');
-            span.textContent = courseName;
-            span.style.cursor = 'pointer';
-
-            span.addEventListener('click', () => {
-                const description = getBriefBox(courseName);
-                showDescBox(courseName, description)
-            });
-
-            li.appendChild(span);
-            return li;
         }
 
         function generateAvCourses(){
