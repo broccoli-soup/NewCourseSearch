@@ -15,7 +15,7 @@
         }
         @keyframes popIn {
             0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.1); opacity: 1; }
+            70% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(1); opacity: 1; }
         }
         .popOut {
@@ -24,7 +24,7 @@
 
         @keyframes popOut {
             0% { transform: scale(1); opacity: 1; }
-            70% { transform: scale(1.1); opacity: 1; }
+            70% { transform: scale(1.05); opacity: 1; }
             100% { transform: scale(0.5); opacity: 0; }
         }
         ul{
@@ -140,8 +140,8 @@
             position: fixed; 
             width: 50vw;
             height: auto;
-            max-height: 60vh;         
-            top: 25%;               
+            max-height: 70vh;         
+            top: 15%;               
             left: 25%;              
             /*transform: translate(-50%, -50%); */
             background: white;
@@ -917,8 +917,8 @@ Materials Chemistry: Polymer Synthesis and Applications,CAS CH 551,CAS CH 204 OR
 The primary objective of this course is to teach the chemistry and engineering skills needed to solve challenges in polymers and polymeric materials. This course is divided into three sections: macromolecular chemistry, physical characterization & properties, and specialty polymer sections. Three hours of lecture weekly. Note that this information may change at any time. Please visit the MyBU Student Portal for the most up-to-date course information. Note that this information may change at any time. Read the full terms of use.  "`
 
         const parsed = Papa.parse(csvString.trim(), {
-        header: false,
-        skipEmptyLines: true,
+            header: false,
+            skipEmptyLines: true,
         });
 
         csvArray = parsed.data;
@@ -986,16 +986,28 @@ The primary objective of this course is to teach the chemistry and engineering s
                 alert('Course not found!')
                 return;
             }
-            let toAdd = joinedCode + ": " + csvArray[index][0];
-            const courseList = document.getElementById("courseList");
-            const li = document.createElement('li');
-            li.classList.add('pop'); // essentially, makes li into a .pop class
-            li.textContent = toAdd;
 
-            li.style.cursor = 'pointer'; // even when hovering, its a cursor
-            // event listener, removes when clicked
+            let toAdd = joinedCode + ": " + csvArray[index][0];
+
+            const li = document.createElement('li');
+            li.classList.add('pop');
+
+            const span = document.createElement('span'); // contains text content
+            span.textContent = toAdd;
+            span.style.cursor = 'pointer';
 
             li.addEventListener('click', () => {
+                const courseCode = span.textContent.substring(0, 10);
+                const description = csvArray.find(course => course[1] === courseCode)[7];
+                showDescBox(courseCode, description);
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'x';
+            deleteBtn.classList.add('delete-btn');
+
+            deleteBtn.addEventListener('click', () => { // holdover code 
+                event.stopPropagation(); // shoe-horned in fix to stop the desc from popping up when you press delete lol
                 li.classList.add('popOut');
                 li.addEventListener('animationend', () => {
                     li.remove();
@@ -1003,6 +1015,8 @@ The primary objective of this course is to teach the chemistry and engineering s
                 }, { once: true });
             });
 
+            li.appendChild(span);
+            li.appendChild(deleteBtn);
             courseList.appendChild(li);
             generateAvCourses();
         }
@@ -1089,7 +1103,8 @@ The primary objective of this course is to teach the chemistry and engineering s
                     deleteBtn.textContent = 'x';
                     deleteBtn.classList.add('delete-btn');
 
-                    deleteBtn.addEventListener('click', () => {
+                    deleteBtn.addEventListener('click', (event) => {
+                        event.stopPropagation();
                         hiddenCodes.push((new_li.textContent).substring(0, 10));
                         console.log(hiddenCodes);
                         new_li.classList.add('popOut');
@@ -1098,8 +1113,8 @@ The primary objective of this course is to teach the chemistry and engineering s
                         }, { once: true });
                     })
 
-                    span.addEventListener('click', () => {
-                        span.style.cursor = 'pointer';
+                    new_li.addEventListener('click', () => {
+                        new_li.style.cursor = 'pointer';
                         // this unreadable section of code essentially finds the description of the course contained in span's textfield
                         courseCode = (span.textContent).substring(0, 10);
                         description = csvArray.find(course => course[1] === courseCode)[7];
