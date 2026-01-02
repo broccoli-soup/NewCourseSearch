@@ -21,11 +21,12 @@ def extractPrerequisites(description):
         plainText = re.sub(r"[ \t\n().]", "", plainText)
         plainText = plainText.replace("ORCONSENTOFINSTRUCTOR", "")
         plainText = plainText.replace("ORCONSENTOFTHEINSTRUCTOR", "")
-        plainText = plainText.replace("ORCONSENTOFINSTRUCTOR", "")
         plainText = plainText.replace("ORPERMISSIONOFINSTRUCTOR", "")
+        plainText = plainText.replace("ORPERMISSIONOFTHEINSTRUCTOR", "")
         plainText = plainText.replace("SENIORSTANDING", "SPECIAL")
         plainText = plainText.replace("JUNIORSTANDING", "SPECIAL")
         plainText = plainText.replace("SOPHOMORESTANDING", "SPECIAL")
+        plainText = plainText.replace("GRADUATESTANDING", "SPECIAL")
         plainText = plainText.replace("OREQUIVALENT", "")
         parts = re.split(r'\s*(?:AND|&|;)\s*', plainText, flags=re.IGNORECASE)
         parts = [p.strip() for p in parts]
@@ -46,6 +47,12 @@ def safeGet(list, index):
         return("")
     
 def courseData(courseCode, url):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/143.0.0.0 Safari/537.36"
+    }
+    response = requests.get(url, headers=headers, timeout=10)
     response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
 
@@ -78,7 +85,9 @@ def courseData(courseCode, url):
     return(course)
 
 courseList = [] #to be made into df and thus into an array
-for courseNum in range(300, 993):
+fastList = [311 , 327 , 330 , 401 , 402 , 410 , 412 , 413 , 414 , 417 , 418 , 427 , 440 , 441 , 444 , 447 , 455 , 463 , 471 , 500 , 500 , 500 , 500 , 500 , 501 , 503 , 504 , 512 , 513 , 516 , 518 , 520 , 521 , 522 , 523 , 524 , 525]
+fastList2 = [527, 528 , 530 , 531 , 533 , 534 , 535 , 541 , 545 , 555 , 556 , 562 , 565 , 570 , 571 , 572 , 574 , 575 , 577 , 578 , 580 , 583 , 585 , 591 , 601 , 602 , 605 , 674 , 700 , 710 , 716 , 720 , 721 , 762 , 770 , 774]
+for courseNum in fastList2:
     url = f"https://www.bu.edu/academics/cas/courses/eng-ec-{courseNum}/"
     courseCode = 'ENG EC ' + str(courseNum)
     courseInfo = courseData(courseCode, url)
@@ -87,7 +96,7 @@ for courseNum in range(300, 993):
         print(courseInfo['Course Code'], courseInfo['Title'], 'Prerequisite 1', courseInfo['Prerequisite 1'])
 
 df = pd.DataFrame(courseList)
-df.to_csv('bu_eng_ec_courses.csv', index = False)
+df.to_csv('bu_eng_ec_courses_2.csv', index = False)
 
 # for courseCode in range(100, 1000):
 #     url = f"https://www.bu.edu/academics/cas/courses/cas-ma-{courseCode}/"
