@@ -46,6 +46,10 @@
             justify-content: space-between; /* space between text and button */
             align-items: center;         /* center items vertically */
         }
+        li:hover {
+            background-color: #d0d0d0; /* darker grey on hover */
+        }
+
         .button {
             margin-left: 10px;
             margin-top: 10px;
@@ -113,8 +117,8 @@
             font-size: 14px;
             transition: background-color 0.3s ease;
         }
-        .delete-btn:hover {
-            background-color: #a00000; /* darker red on hover */
+        button:hover {
+            background-color: #900000; /* darker red on hover */
         }
         .basicCourseButton {
             background-color: #f0f0f0;
@@ -1103,7 +1107,7 @@ Semiconductor Quantum Structures and Photonic Devices,ENG EC 774,ENG EC 574,,,,,
             });
 
             const deleteBtn = document.createElement('button');
-            deleteBtn.textContent = 'x';
+            deleteBtn.textContent = '×';
             deleteBtn.classList.add('delete-btn');
 
             deleteBtn.addEventListener('click', () => { // holdover code 
@@ -1200,7 +1204,7 @@ Semiconductor Quantum Structures and Photonic Devices,ENG EC 774,ENG EC 574,,,,,
                     span.textContent = toAdd;
 
                     const deleteBtn = document.createElement('button');
-                    deleteBtn.textContent = 'x';
+                    deleteBtn.textContent = '×';
                     deleteBtn.classList.add('delete-btn');
 
                     deleteBtn.addEventListener('click', (event) => {
